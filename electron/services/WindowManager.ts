@@ -89,7 +89,7 @@ export class WindowManager {
       fullscreenable: false,
       ...(isMac ? { acceptFirstMouse: true, roundedCorners: false } : {}),
       webPreferences: {
-        preload: path.join(__dirname, 'preload.mjs'),
+        preload: path.join(__dirname, 'preload.cjs'),
         contextIsolation: true,
         nodeIntegration: false,
         backgroundThrottling: false,
@@ -177,7 +177,7 @@ export class WindowManager {
       title: 'PixelPaw Settings',
       show: false,
       webPreferences: {
-        preload: path.join(__dirname, 'preload.mjs'),
+        preload: path.join(__dirname, 'preload.cjs'),
         contextIsolation: true,
         nodeIntegration: false,
       },
