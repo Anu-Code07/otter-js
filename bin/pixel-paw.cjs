@@ -10,7 +10,11 @@ const main = path.join(__dirname, '..', 'dist-electron', 'main.js');
 
 const child = spawn(electron, [main], {
   stdio: 'inherit',
-  env: process.env,
+  env: {
+    ...process.env,
+    NODE_ENV: 'production',
+    ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
+  },
 });
 
 child.on('error', (err) => {

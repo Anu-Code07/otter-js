@@ -39,6 +39,9 @@ function startServices(): void {
 }
 
 app.whenReady().then(() => {
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.hide();
+  }
   registerIpcHandlers();
   startServices();
   windowManager.createPetWindow();
@@ -56,7 +59,8 @@ app.whenReady().then(() => {
 app.on('second-instance', () => {
   const petWindow = windowManager.getPetWindow();
   if (petWindow && !petWindow.isDestroyed()) {
-    petWindow.showInactive();
+    petWindow.show();
+    petWindow.moveTop();
   }
 });
 

@@ -60,8 +60,9 @@ const FPS: Partial<Record<PetAnimation, number>> = {
 function buildFrames(animation: PetAnimation): string[] {
   const folder = ANIMATION_FOLDERS[animation];
   const count = FRAME_COUNTS[animation];
+  const base = import.meta.env.BASE_URL ?? './';
   return Array.from({ length: count }, (_, i) =>
-  `/assets/pets/otter/${folder}/frame-${String(i).padStart(2, '0')}.png`);
+    `${base}assets/pets/otter/${folder}/frame-${String(i).padStart(2, '0')}.png`);
 }
 
 export function createAnimationFrames(): Record<PetAnimation, { frames: string[]; fps: number; loop: boolean }> {

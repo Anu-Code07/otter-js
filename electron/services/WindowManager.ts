@@ -7,6 +7,29 @@ import type { WindowBounds } from '../../src/types/system';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function clampWindowToDisplay(bounds: WindowBounds): WindowBounds {
+  const displays = screen.getAllDisplays();
+  const onScreen = displays.some((display) => {
+    const { x, y, width, height } = display.workArea;
+    return (
+      bounds.x >= x - 50 &&
+      bounds.y >= y - 50 &&
+      bounds.x < x + width &&
+      bounds.y < y + height
+    );
+  });
+
+  if (onScreen) return bounds;
+
+  const primary = screen.getPrimaryDisplay().workArea;
+  return {
+    x: primary.x + primary.width - bounds.width - 40,
+    y: primary.y + primary.height - bounds.height - 40,
+    width: bounds.width,
+    height: bounds.height,
+  };
+}
+
 export class WindowManager {
   private petWindow: BrowserWindow | null = null;
   private settingsWindow: BrowserWindow | null = null;
@@ -14,6 +37,7 @@ export class WindowManager {
 
   createPetWindow(): BrowserWindow {
     if (this.petWindow && !this.petWindow.isDestroyed()) {
+      this.petWindow.show();
       return this.petWindow;
     }
 
@@ -24,22 +48,31 @@ export class WindowManager {
       ? (settingsService.get() as AppSettingsWithBounds).windowBounds
       : undefined;
 
-    const initialX = savedBounds?.x ?? width - size - 40;
-    const initialY = savedBounds?.y ?? height - size - 40;
-
-    this.petWindow = new BrowserWindow({
+    const rawBounds: WindowBounds = {
+      x: savedBounds?.x ?? width - size - 40,
+      y: savedBounds?.y ?? height - size - 40,
       width: savedBounds?.width ?? size,
       height: savedBounds?.height ?? size,
-      x: initialX,
-      y: initialY,
+    };
+    const initialBounds = clampWindowToDisplay(rawBounds);
+
+    const isMac = process.platform === 'darwin';
+
+    this.petWindow = new BrowserWindow({
+      width: initialBounds.width,
+      height: initialBounds.height,
+      x: initialBounds.x,
+      y: initialBounds.y,
       transparent: true,
+      backgroundColor: '#00000000',
       frame: false,
       alwaysOnTop: settings.alwaysOnTop,
       resizable: false,
       skipTaskbar: true,
       hasShadow: false,
-      focusable: false,
+      focusable: true,
       show: false,
+      ...(isMac ? { type: 'panel' as const } : {}),
       webPreferences: {
         preload: path.join(__dirname, 'preload.mjs'),
         contextIsolation: true,
@@ -49,7 +82,8 @@ export class WindowManager {
     });
 
     this.petWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver');
+    this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
+    this.petWindow.setOpacity(settings.petOpacity);
     this.applyMouseTransparency();
 
     this.petWindow.on('moved', () => this.savePetBounds());
@@ -58,15 +92,28 @@ export class WindowManager {
     });
 
     const devUrl = process.env.VITE_DEV_SERVER_URL;
+    const indexPath = path.join(__dirname, '../dist/index.html');
+
     if (devUrl) {
       void this.petWindow.loadURL(devUrl);
     } else {
-      void this.petWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+      void this.petWindow.loadFile(indexPath);
     }
 
-    this.petWindow.once('ready-to-show', () => {
-      this.petWindow?.showInactive();
+    this.petWindow.webContents.on('did-fail-load', (_event, code, desc) => {
+      logger.error(`Pet window failed to load: ${code} ${desc}`);
     });
+
+    const showPet = (): void => {
+      if (!this.petWindow || this.petWindow.isDestroyed()) return;
+      this.petWindow.show();
+      this.petWindow.moveTop();
+      this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
+      logger.info(`Pet window visible at ${JSON.stringify(this.petWindow.getBounds())}`);
+    };
+
+    this.petWindow.once('ready-to-show', showPet);
+    setTimeout(showPet, 1500);
 
     logger.info('Pet window created');
     return this.petWindow;
@@ -133,7 +180,7 @@ export class WindowManager {
   updateFromSettings(): void {
     const settings = settingsService.get();
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
-    this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver');
+    this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
     this.petWindow.setOpacity(settings.petOpacity);
     const size = settings.petSize + 80;
     const bounds = this.petWindow.getBounds();
