@@ -1,0 +1,23 @@
+# Source
+src/
+electron/
+scripts/
+tests/
+integrations/
+
+# Dev / build tooling
+node_modules/
+release/
+*.log
+.env
+.env.*
+
+# Config not needed at runtime
+vite.config.ts
+vitest.config.ts
+tsconfig*.json
+eslint.config.js
+.gitignore
+
+# Docs dev-only
+integrations/

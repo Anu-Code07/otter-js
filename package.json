@@ -1,23 +1,57 @@
 {
   "name": "pixel-paw",
   "version": "1.0.0",
-  "description": "A cute pixel otter desktop companion for developers",
+  "description": "A cute pixel otter desktop companion for developers — reacts to your cursor and alerts when Claude, permissions, builds, or tools need you.",
   "main": "dist-electron/main.js",
+  "bin": {
+    "pixel-paw": "bin/pixel-paw.cjs"
+  },
   "author": "PixelPaw",
   "license": "MIT",
-  "private": true,
   "type": "module",
+  "keywords": [
+    "electron",
+    "desktop",
+    "pet",
+    "otter",
+    "companion",
+    "claude",
+    "developer-tools",
+    "pixel-art",
+    "desktop-pet"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anu-Code07/otter-js.git"
+  },
+  "homepage": "https://github.com/Anu-Code07/otter-js#readme",
+  "bugs": {
+    "url": "https://github.com/Anu-Code07/otter-js/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "dist-electron",
+    "public/assets",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.node.json && vite build && tsc -p tsconfig.electron.json",
+    "prepublishOnly": "npm run build",
     "package": "npm run build && electron-builder",
+    "start": "node bin/pixel-paw.cjs",
     "lint": "eslint . --ext .ts,.tsx",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts",
-    "generate:sprites": "tsx scripts/generate-sprites.ts",
-    "postinstall": "npm run generate:sprites"
+    "generate:sprites": "tsx scripts/generate-sprites.ts"
   },
   "dependencies": {
+    "electron": "^33.2.1",
     "electron-store": "^10.0.0",
     "framer-motion": "^11.15.0",
     "react": "^18.3.1",
@@ -31,7 +65,6 @@
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
     "eslint": "^9.16.0",
     "eslint-plugin-react-hooks": "^5.1.0",
