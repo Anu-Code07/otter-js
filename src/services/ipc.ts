@@ -22,6 +22,9 @@ export function getIpc(): typeof window.pixelPaw | null {
 }
 
 export const mockIpc: typeof window.pixelPaw = {
+  assets: {
+    resolve: (relativePath) => `./assets/${relativePath}`,
+  },
   cursor: {
     onMove: (callback) => {
       const id = setInterval(() => {

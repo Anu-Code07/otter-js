@@ -3,15 +3,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { cursorTracker } from './CursorTracker';
 import { logger } from './Logger';
-import { settingsService } from './SettingsService';
+import { settingsService, effectivePetSize } from './SettingsService';
 import type { WindowBounds } from '../../src/types/system';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const WINDOW_CHROME = 24;
+const WINDOW_CHROME = 8;
 
 export function petWindowSize(petSize: number): number {
-  return petSize + WINDOW_CHROME;
+  return effectivePetSize(petSize) + WINDOW_CHROME;
 }
 
 function getCenteredPetBounds(petSize: number): WindowBounds {
@@ -121,8 +121,13 @@ export class WindowManager {
       logger.error(`Pet window failed to load: ${code} ${desc}`);
     });
 
+    this.petWindow.webContents.on('console-message', (_event, _level, message) => {
+      logger.info(`[pet-ui] ${message}`);
+    });
+
     this.petWindow.webContents.once('did-finish-load', () => {
       this.showPetOnce();
+      void this.verifyPetSprite();
     });
 
     logger.info('Pet window created');
@@ -134,6 +139,28 @@ export class WindowManager {
     this.hasShownPet = true;
     this.revealPetWindow();
     logger.info(`Pet window visible at ${JSON.stringify(this.petWindow.getBounds())}`);
+  }
+
+  private async verifyPetSprite(): Promise<void> {
+    if (!this.petWindow || this.petWindow.isDestroyed()) return;
+    try {
+      const status = await this.petWindow.webContents.executeJavaScript(`(() => {
+        const img = document.querySelector('.pixel-pet');
+        if (!img) return { ok: false, reason: 'no-image-element' };
+        return {
+          ok: img.naturalWidth > 0,
+          src: img.currentSrc || img.src,
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+        };
+      })()`);
+      logger.info(`Pet sprite check: ${JSON.stringify(status)}`);
+      if (!status?.ok) {
+        logger.warn('Pet sprite failed to load — try Reset position from tray menu');
+      }
+    } catch (error) {
+      logger.warn(`Pet sprite check failed: ${String(error)}`);
+    }
   }
 
   createSettingsWindow(): BrowserWindow {
@@ -183,11 +210,8 @@ export class WindowManager {
   revealPetWindow(): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
     const settings = settingsService.get();
-    if (process.platform === 'darwin') {
-      this.petWindow.showInactive();
-    } else {
-      this.petWindow.show();
-    }
+    this.petWindow.show();
+    this.petWindow.focus();
     this.petWindow.moveTop();
     this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
     this.petWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
