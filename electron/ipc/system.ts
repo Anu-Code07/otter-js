@@ -27,7 +27,7 @@ export function registerSystemIpc(): void {
     const petWindow = windowManager.getPetWindow();
     if (petWindow && !petWindow.isDestroyed()) {
       if (enabled) {
-        petWindow.showInactive();
+        windowManager.revealPetWindow();
       } else {
         petWindow.hide();
       }
@@ -73,10 +73,7 @@ export function createTray(): Tray {
   updateTrayMenu();
 
   tray.on('click', () => {
-    const petWindow = windowManager.getPetWindow();
-    if (petWindow && !petWindow.isDestroyed()) {
-      petWindow.showInactive();
-    }
+    windowManager.revealPetWindow();
   });
 
   return tray;
@@ -90,7 +87,7 @@ function handleTrayAction(action: string): void {
       {
         const petWindow = windowManager.getPetWindow();
         if (petWindow && !petWindow.isDestroyed()) {
-          if (petEnabled) petWindow.showInactive();
+          if (petEnabled) windowManager.revealPetWindow();
           else petWindow.hide();
         }
       }
@@ -104,6 +101,12 @@ function handleTrayAction(action: string): void {
     case 'toggle-claude':
       settingsService.set({ claudeAlerts: !settingsService.get().claudeAlerts });
       updateTrayMenu();
+      break;
+    case 'show-pet':
+      windowManager.revealPetWindow();
+      break;
+    case 'reset-position':
+      windowManager.resetPetPosition();
       break;
     case 'settings':
       windowManager.createSettingsWindow();
@@ -137,6 +140,15 @@ function updateTrayMenu(): void {
       label: attentionAlertsEnabled ? '✓ Attention Alerts' : 'Attention Alerts',
       click: () => handleTrayAction('toggle-alerts'),
     },
+    {
+      label: 'Show otter',
+      click: () => handleTrayAction('show-pet'),
+    },
+    {
+      label: 'Reset position',
+      click: () => handleTrayAction('reset-position'),
+    },
+    { type: 'separator' },
     {
       label: 'Settings',
       click: () => handleTrayAction('settings'),

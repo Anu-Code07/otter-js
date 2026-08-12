@@ -1,6 +1,6 @@
 {
   "name": "pixel-paw",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A cute pixel otter desktop companion for developers — reacts to your cursor and alerts when Claude, permissions, builds, or tools need you.",
   "main": "dist-electron/main.js",
   "bin": {

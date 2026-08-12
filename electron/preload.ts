@@ -51,6 +51,8 @@ const pixelPaw = {
     startDrag: (offsetX: number, offsetY: number): Promise<void> =>
       ipcRenderer.invoke('window:startDrag', offsetX, offsetY),
     endDrag: (): Promise<void> => ipcRenderer.invoke('window:endDrag'),
+    revealPet: (): Promise<void> => ipcRenderer.invoke('window:revealPet'),
+    resetPosition: (): Promise<void> => ipcRenderer.invoke('window:resetPosition'),
   },
   settings: {
     get: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),

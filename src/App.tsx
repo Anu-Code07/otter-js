@@ -9,7 +9,7 @@ function App() {
 
   useEffect(() => {
     if (!isSettings) {
-      void ipc().window.setPetInteractive(false);
+      void ipc().window.setPetInteractive(true);
     }
   }, [isSettings]);
 
