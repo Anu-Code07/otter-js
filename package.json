@@ -1,6 +1,6 @@
 {
   "name": "pixel-paw",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A cute pixel otter desktop companion for developers — reacts to your cursor and alerts when Claude, permissions, builds, or tools need you.",
   "main": "dist-electron/main.js",
   "bin": {
@@ -48,7 +48,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts",
-    "generate:sprites": "tsx scripts/generate-sprites.ts"
+    "generate:sprites": "tsx scripts/generate-sprites.ts",
+    "sprites:watercolor": "python3 scripts/process-watercolor-sprites.py"
   },
   "dependencies": {
     "electron": "^33.2.1",
