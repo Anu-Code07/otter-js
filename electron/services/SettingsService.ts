@@ -2,6 +2,7 @@ import { app } from 'electron';
 import Store from 'electron-store';
 import type { AppSettings } from '../../src/types/system';
 import { DEFAULT_SETTINGS } from '../../src/types/system';
+import { logger } from './Logger';
 
 const store = new Store<AppSettings>({
   name: 'pixelpaw-settings',
@@ -30,18 +31,25 @@ export class SettingsService {
   }
 
   onChange(callback: (settings: AppSettings) => void): () => void {
-    const unsubscribe = store.onDidAnyChange(() => callback(this.get()));
-    return unsubscribe;
+    return store.onDidAnyChange(() => callback(this.get()));
   }
 
   configureStartup(enabled: boolean): void {
-    if (!app.isPackaged && process.platform !== 'darwin') {
+    if (process.platform === 'darwin' && !app.isPackaged) {
+      logger.info('Launch at login skipped in development (macOS requires packaged app)');
       return;
     }
-    app.setLoginItemSettings({
-      openAtLogin: enabled,
-      openAsHidden: false,
-    });
+
+    try {
+      app.setLoginItemSettings({
+        openAtLogin: enabled,
+        openAsHidden: false,
+      });
+    } catch {
+      logger.warn(
+        'Could not update launch at login. Enable manually in System Settings if needed.',
+      );
+    }
   }
 }
 
