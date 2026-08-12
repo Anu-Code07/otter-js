@@ -39,6 +39,8 @@ body,
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   cursor: grab;
+  user-select: none;
+  -webkit-user-drag: none;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
   transition: transform 0.15s ease;
 }
