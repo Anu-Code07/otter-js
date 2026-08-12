@@ -23,7 +23,7 @@ export function PixelPet(): JSX.Element | null {
     startY: 0,
   });
 
-  const size = settings?.petSize ?? 96;
+  const size = settings?.petSize ?? 128;
   const opacity = settings?.petOpacity ?? 1;
 
   const handleMouseEnter = useCallback(() => {

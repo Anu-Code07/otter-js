@@ -9,9 +9,21 @@ const store = new Store<AppSettings>({
   defaults: DEFAULT_SETTINGS,
 });
 
+const SETTINGS_MIGRATION_VERSION = 2;
+
 type SettingsKey = keyof AppSettings;
 
 export class SettingsService {
+  migrateIfNeeded(): void {
+    const version = store.get('settingsMigrationVersion') ?? 0;
+    if (version >= SETTINGS_MIGRATION_VERSION) return;
+
+    store.delete('windowBounds');
+    store.set('petSize', 128);
+    store.set('settingsMigrationVersion', SETTINGS_MIGRATION_VERSION);
+    logger.info('Settings migrated — pet will open centered and larger');
+  }
+
   get(): AppSettings {
     const result: AppSettings = { ...DEFAULT_SETTINGS };
     for (const key of Object.keys(DEFAULT_SETTINGS) as SettingsKey[]) {

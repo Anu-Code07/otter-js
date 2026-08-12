@@ -16,6 +16,10 @@ if (!gotTheLock) {
   app.quit();
 }
 
+if (process.platform === 'darwin') {
+  app.disableHardwareAcceleration();
+}
+
 function registerIpcHandlers(): void {
   registerCursorIpc();
   registerAttentionIpc();
@@ -41,6 +45,7 @@ app.whenReady().then(() => {
     app.dock.hide();
   }
   registerIpcHandlers();
+  settingsService.migrateIfNeeded();
   startServices();
   windowManager.createPetWindow();
   createTray();
