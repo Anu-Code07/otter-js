@@ -1,7 +1,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import type { ClaudeStatus } from '../../src/types/claude';
-import { logger } from '../services/Logger';
 import type { PermissionDialogInfo } from './permission';
 import { matchesPermissionDialog } from './permission';
 
@@ -69,8 +68,7 @@ export const linuxAdapter: PlatformAdapter = {
       return inferStatusFromTitle(title);
     }
 
-    logger.debug('Claude process detected but window state unknown');
-    return 'unknown';
+    return 'idle';
   },
 
   async detectPermissionDialog(): Promise<PermissionDialogInfo> {

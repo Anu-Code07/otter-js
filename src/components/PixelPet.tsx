@@ -103,7 +103,7 @@ export function PixelPet(): JSX.Element | null {
       )}
       <img
         className="pixel-pet"
-        src={frameSrc}
+        src={frameSrc || './assets/pets/otter/idle/frame-00.png'}
         alt="PixelPaw otter"
         draggable={false}
         style={{ width: size, height: size, opacity }}

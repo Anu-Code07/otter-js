@@ -1,7 +1,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import type { ClaudeStatus } from '../../src/types/claude';
-import { logger } from '../services/Logger';
 import type { PermissionDialogInfo } from './permission';
 import { matchesPermissionDialog } from './permission';
 
@@ -79,8 +78,7 @@ export const macosAdapter: PlatformAdapter = {
       return inferStatusFromSignals(appName, title);
     }
 
-    logger.debug('Claude process detected on macOS but not frontmost');
-    return 'unknown';
+    return 'idle';
   },
 
   async detectPermissionDialog(): Promise<PermissionDialogInfo> {
