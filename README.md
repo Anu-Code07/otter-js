@@ -21,12 +21,48 @@ PixelPaw watches your desktop, reacts to your cursor, and alerts you when someth
 - **Developer simulation** — test all attention sources without real triggers
 - **Privacy-first** — everything runs locally
 
-## Quick Start
+## Install & Run (easiest — Mac or Windows)
+
+Requires **Node.js 18+**.
+
+### One-liner (no install)
+
+```bash
+npx pixel-paw
+```
+
+### Global install
+
+```bash
+npm install -g pixel-paw
+pixel-paw
+```
+
+First run downloads Electron (~150MB) — this is normal.
+
+| Platform | After launch |
+|----------|----------------|
+| **Mac** | Otter on desktop + menu bar tray icon |
+| **Windows** | Otter on desktop + system tray icon |
+
+**Mac:** If permission detection is weak, grant **System Settings → Privacy & Security → Accessibility** to Terminal or your terminal app.
+
+**Windows:** Allow through SmartScreen if prompted on first Electron download.
+
+### Tray & controls
+
+- **Right-click otter** → Pause, Settings, Quit  
+- **Tray icon** → Settings, toggle alerts, quit  
+- **Settings → Developer Mode** → test alerts without real triggers
+
+---
+
+## Quick Start (from source)
 
 ### Mac
 
 ```bash
-git clone <repo-url> pixel-paw
+git clone https://github.com/Anu-Code07/otter-js.git pixel-paw
 cd pixel-paw
 npm install
 npm run dev
@@ -35,13 +71,11 @@ npm run dev
 ### Windows (PowerShell)
 
 ```powershell
-git clone <repo-url> pixel-paw
+git clone https://github.com/Anu-Code07/otter-js.git pixel-paw
 cd pixel-paw
 npm install
 npm run dev
 ```
-
-The otter appears on your desktop. Use the **menu bar / system tray icon** for settings.
 
 ### Build an installer
 
