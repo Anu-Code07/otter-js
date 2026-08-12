@@ -1,0 +1,76 @@
+{
+  "name": "pixel-paw",
+  "version": "1.0.0",
+  "description": "A cute pixel otter desktop companion for developers",
+  "main": "dist-electron/main.js",
+  "author": "PixelPaw",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.node.json && vite build && tsc -p tsconfig.electron.json",
+    "package": "npm run build && electron-builder",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "generate:sprites": "tsx scripts/generate-sprites.ts",
+    "postinstall": "npm run generate:sprites"
+  },
+  "dependencies": {
+    "electron-store": "^10.0.0",
+    "framer-motion": "^11.15.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "eslint": "^9.16.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "jsdom": "^25.0.1",
+    "pngjs": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron-renderer": "^0.14.6",
+    "vitest": "^2.1.8"
+  },
+  "build": {
+    "appId": "com.pixelpaw.app",
+    "productName": "PixelPaw",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "public/assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "public/assets",
+        "to": "assets"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": ["nsis", "portable"]
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Utility"
+    }
+  }
+}

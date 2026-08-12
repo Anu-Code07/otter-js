@@ -1,0 +1,28 @@
+import { useEffect } from 'react';
+import { PixelPet } from './components/PixelPet';
+import { SettingsWindow } from './components/SettingsWindow';
+import { StatusIndicator } from './components/StatusIndicator';
+import { ipc } from './services/ipc';
+
+function App() {
+  const isSettings = window.location.hash === '#/settings';
+
+  useEffect(() => {
+    if (!isSettings) {
+      void ipc().window.setPetInteractive(false);
+    }
+  }, [isSettings]);
+
+  if (isSettings) {
+    return <SettingsWindow />;
+  }
+
+  return (
+    <div className="app-root">
+      <PixelPet />
+      <StatusIndicator />
+    </div>
+  );
+}
+
+export default App;
