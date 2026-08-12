@@ -8,6 +8,23 @@ import type { WindowBounds } from '../../src/types/system';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const WINDOW_CHROME = 24;
+
+export function petWindowSize(petSize: number): number {
+  return petSize + WINDOW_CHROME;
+}
+
+function getCenteredPetBounds(petSize: number): WindowBounds {
+  const size = petWindowSize(petSize);
+  const { workArea } = screen.getPrimaryDisplay();
+  return {
+    x: workArea.x + Math.round((workArea.width - size) / 2),
+    y: workArea.y + Math.round((workArea.height - size) / 2),
+    width: size,
+    height: size,
+  };
+}
+
 function clampWindowToDisplay(bounds: WindowBounds): WindowBounds {
   const displays = screen.getAllDisplays();
   const centerX = bounds.x + bounds.width / 2;
@@ -24,14 +41,7 @@ function clampWindowToDisplay(bounds: WindowBounds): WindowBounds {
   });
 
   if (onScreen) return bounds;
-
-  const primary = screen.getPrimaryDisplay().workArea;
-  return {
-    x: primary.x + Math.round((primary.width - bounds.width) / 2),
-    y: primary.y + Math.round((primary.height - bounds.height) / 2),
-    width: bounds.width,
-    height: bounds.height,
-  };
+  return getCenteredPetBounds(bounds.width - WINDOW_CHROME);
 }
 
 export class WindowManager {
@@ -41,26 +51,23 @@ export class WindowManager {
   private isDragging = false;
   private dragOffset: { x: number; y: number } | null = null;
   private dragUnsubscribe: (() => void) | null = null;
+  private hasShownPet = false;
 
   createPetWindow(): BrowserWindow {
     if (this.petWindow && !this.petWindow.isDestroyed()) {
-      this.petWindow.show();
+      this.revealPetWindow();
       return this.petWindow;
     }
 
     const settings = settingsService.get();
-    const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-    const size = settings.petSize + 80;
+    const size = petWindowSize(settings.petSize);
     const savedBounds = settings.rememberPosition
       ? (settingsService.get() as AppSettingsWithBounds).windowBounds
       : undefined;
 
-    const rawBounds: WindowBounds = {
-      x: savedBounds?.x ?? width - size - 40,
-      y: savedBounds?.y ?? height - size - 40,
-      width: savedBounds?.width ?? size,
-      height: savedBounds?.height ?? size,
-    };
+    const rawBounds: WindowBounds = savedBounds
+      ? { ...savedBounds, width: size, height: size }
+      : getCenteredPetBounds(settings.petSize);
     const initialBounds = clampWindowToDisplay(rawBounds);
 
     const isMac = process.platform === 'darwin';
@@ -80,7 +87,7 @@ export class WindowManager {
       focusable: true,
       show: false,
       fullscreenable: false,
-      ...(isMac ? { acceptFirstMouse: true } : {}),
+      ...(isMac ? { acceptFirstMouse: true, roundedCorners: false } : {}),
       webPreferences: {
         preload: path.join(__dirname, 'preload.mjs'),
         contextIsolation: true,
@@ -89,6 +96,7 @@ export class WindowManager {
       },
     });
 
+    this.petWindow.setBackgroundColor('#00000000');
     this.petWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
     this.petWindow.setOpacity(settings.petOpacity);
@@ -97,6 +105,7 @@ export class WindowManager {
     this.petWindow.on('moved', () => this.savePetBounds());
     this.petWindow.on('closed', () => {
       this.petWindow = null;
+      this.hasShownPet = false;
     });
 
     const devUrl = process.env.VITE_DEV_SERVER_URL;
@@ -112,20 +121,19 @@ export class WindowManager {
       logger.error(`Pet window failed to load: ${code} ${desc}`);
     });
 
-    const showPet = (): void => {
-      if (!this.petWindow || this.petWindow.isDestroyed()) return;
-      this.revealPetWindow();
-      logger.info(`Pet window visible at ${JSON.stringify(this.petWindow.getBounds())}`);
-    };
-
-    this.petWindow.webContents.on('did-finish-load', () => {
-      showPet();
+    this.petWindow.webContents.once('did-finish-load', () => {
+      this.showPetOnce();
     });
-    this.petWindow.once('ready-to-show', showPet);
-    setTimeout(showPet, 500);
 
     logger.info('Pet window created');
     return this.petWindow;
+  }
+
+  private showPetOnce(): void {
+    if (this.hasShownPet || !this.petWindow || this.petWindow.isDestroyed()) return;
+    this.hasShownPet = true;
+    this.revealPetWindow();
+    logger.info(`Pet window visible at ${JSON.stringify(this.petWindow.getBounds())}`);
   }
 
   createSettingsWindow(): BrowserWindow {
@@ -184,18 +192,12 @@ export class WindowManager {
     this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
     this.petWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     this.petWindow.setOpacity(settings.petOpacity);
+    this.petWindow.setBackgroundColor('#00000000');
   }
 
   resetPetPosition(): void {
     const settings = settingsService.get();
-    const size = settings.petSize + 80;
-    const { workArea } = screen.getPrimaryDisplay();
-    const bounds: WindowBounds = {
-      x: workArea.x + Math.round((workArea.width - size) / 2),
-      y: workArea.y + Math.round((workArea.height - size) / 2),
-      width: size,
-      height: size,
-    };
+    const bounds = getCenteredPetBounds(settings.petSize);
     this.setBounds(bounds);
     this.revealPetWindow();
     logger.info(`Pet window reset to ${JSON.stringify(bounds)}`);
@@ -208,7 +210,6 @@ export class WindowManager {
 
   applyMouseTransparency(): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
-    // macOS transparent windows can become invisible with ignoreMouseEvents enabled.
     if (process.platform === 'darwin') {
       this.petWindow.setIgnoreMouseEvents(false);
       return;
@@ -225,7 +226,7 @@ export class WindowManager {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
     this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
     this.petWindow.setOpacity(settings.petOpacity);
-    const size = settings.petSize + 80;
+    const size = petWindowSize(settings.petSize);
     const bounds = this.petWindow.getBounds();
     this.petWindow.setBounds({
       ...bounds,
