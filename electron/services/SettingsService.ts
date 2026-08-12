@@ -9,9 +9,13 @@ const store = new Store<AppSettings>({
   defaults: DEFAULT_SETTINGS,
 });
 
-const SETTINGS_MIGRATION_VERSION = 2;
+const SETTINGS_MIGRATION_VERSION = 3;
 
 type SettingsKey = keyof AppSettings;
+
+export function effectivePetSize(size: number): number {
+  return Math.max(160, size);
+}
 
 export class SettingsService {
   migrateIfNeeded(): void {
@@ -19,9 +23,12 @@ export class SettingsService {
     if (version >= SETTINGS_MIGRATION_VERSION) return;
 
     store.delete('windowBounds');
-    store.set('petSize', 128);
+    store.set('petSize', 180);
+    store.set('petOpacity', 1);
+    store.set('petEnabled', true);
+    store.set('alwaysOnTop', true);
     store.set('settingsMigrationVersion', SETTINGS_MIGRATION_VERSION);
-    logger.info('Settings migrated — pet will open centered and larger');
+    logger.info('Settings migrated — pet reset to large centered size');
   }
 
   get(): AppSettings {

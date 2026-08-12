@@ -49,7 +49,7 @@ export interface AppSettings extends AttentionSourceSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   launchAtStartup: false,
-  petSize: 128,
+  petSize: 180,
   petOpacity: 1,
   alwaysOnTop: true,
   rememberPosition: true,
@@ -84,7 +84,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   selectedPetId: 'otter',
   inactivityTimeoutMs: 120_000,
   notificationCooldownMs: 60_000,
-  settingsMigrationVersion: 2,
+  settingsMigrationVersion: 3,
 };
 
 export interface WindowBounds {

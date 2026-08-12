@@ -1,4 +1,5 @@
 import type { PetAnimation } from '../types/pet';
+import { resolvePetAsset } from '../services/assetPaths';
 
 type PrimaryPose = 'idle' | 'wave' | 'sleep' | 'alert';
 
@@ -46,8 +47,7 @@ const FPS: Partial<Record<PetAnimation, number>> = {
 };
 
 function buildFramePath(folder: string, index: number): string {
-  const base = import.meta.env.BASE_URL ?? './';
-  return `${base}assets/pets/otter/${folder}/frame-${String(index).padStart(2, '0')}.png`;
+  return resolvePetAsset(`pets/otter/${folder}/frame-${String(index).padStart(2, '0')}.png`);
 }
 
 function buildFrames(animation: PetAnimation): string[] {

@@ -17,7 +17,8 @@ if (!gotTheLock) {
 }
 
 if (process.platform === 'darwin') {
-  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch('enable-transparent-visuals');
+  app.commandLine.appendSwitch('disable-features', 'MacWebContentsOcclusion');
 }
 
 function registerIpcHandlers(): void {

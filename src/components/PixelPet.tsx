@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { usePetStore } from '../store/petStore';
 import { usePetController } from '../hooks/usePetController';
 import { ipc } from '../services/ipc';
+import { idleSpritePath } from '../services/assetPaths';
 import { otterDefinition } from '../pets/otter/definition';
 import { SpeechBubble } from './SpeechBubble';
 import { PetContextMenu } from './PetContextMenu';
@@ -23,7 +24,7 @@ export function PixelPet(): JSX.Element | null {
     startY: 0,
   });
 
-  const size = settings?.petSize ?? 128;
+  const size = settings?.petSize ?? 180;
   const opacity = settings?.petOpacity ?? 1;
 
   const handleMouseEnter = useCallback(() => {
@@ -142,12 +143,15 @@ export function PixelPet(): JSX.Element | null {
       )}
       <img
         className="pixel-pet"
-        src={frameSrc || './assets/pets/otter/idle/frame-00.png'}
+        src={frameSrc || idleSpritePath()}
         alt="PixelPaw otter"
         draggable={false}
         style={{ width: size, height: size, opacity }}
         onPointerDown={handlePointerDown}
         onContextMenu={(e) => e.preventDefault()}
+        onError={() => {
+          console.error('Failed to load pet sprite:', frameSrc || idleSpritePath());
+        }}
       />
       <PetContextMenu />
     </div>

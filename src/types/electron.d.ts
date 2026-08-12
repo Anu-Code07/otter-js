@@ -5,6 +5,9 @@ import type { AppSettings, WindowBounds } from '../types/system';
 import type { PetState } from '../types/pet';
 
 export interface PixelPawAPI {
+  assets: {
+    resolve: (relativePath: string) => string;
+  };
   cursor: {
     onMove: (callback: (position: CursorPosition) => void) => () => void;
     getPosition: () => Promise<CursorPosition>;
