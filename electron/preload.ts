@@ -1,5 +1,3 @@
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
 import { contextBridge, ipcRenderer } from 'electron';
 import type { AttentionSnapshot, AttentionSourceId, AttentionSignal } from '../src/types/attention';
 import type { ClaudeStatus } from '../src/types/claude';
@@ -7,13 +5,11 @@ import type { CursorPosition } from '../src/types/system';
 import type { AppSettings, WindowBounds } from '../src/types/system';
 import type { PetState } from '../src/types/pet';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const assetsRoot = path.join(__dirname, '../dist/assets');
+const assetsBase = new URL('../dist/assets/', import.meta.url);
 
 const pixelPaw = {
   assets: {
-    resolve: (relativePath: string): string =>
-      pathToFileURL(path.join(assetsRoot, relativePath)).href,
+    resolve: (relativePath: string): string => new URL(relativePath, assetsBase).href,
   },
   cursor: {
     onMove: (callback: (position: CursorPosition) => void): (() => void) => {
