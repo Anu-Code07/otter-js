@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { usePetStore } from '../store/petStore';
 import { usePetController } from '../hooks/usePetController';
 import { ipc } from '../services/ipc';
@@ -7,6 +7,8 @@ import { SpeechBubble } from './SpeechBubble';
 import { PetContextMenu } from './PetContextMenu';
 import type { PetAnimation } from '../types/pet';
 
+const DRAG_THRESHOLD_PX = 5;
+
 export function PixelPet(): JSX.Element | null {
   const { frameSrc } = usePetController();
   const settings = usePetStore((s) => s.settings);
@@ -14,10 +16,11 @@ export function PixelPet(): JSX.Element | null {
   const speechMessage = usePetStore((s) => s.speechMessage);
   const isPaused = usePetStore((s) => s.isPaused);
   const petState = usePetStore((s) => s.petState);
-  const dragRef = useRef<{ x: number; y: number; dragging: boolean }>({
-    x: 0,
-    y: 0,
+  const dragRef = useRef({
     dragging: false,
+    didDrag: false,
+    startX: 0,
+    startY: 0,
   });
 
   const size = settings?.petSize ?? 96;
@@ -33,7 +36,7 @@ export function PixelPet(): JSX.Element | null {
     }
   }, []);
 
-  const handleClick = useCallback(() => {
+  const runClickReaction = useCallback(() => {
     const store = usePetStore.getState();
     store.touchInteraction();
     const reactions = otterDefinition.personality.clickReactions;
@@ -55,29 +58,68 @@ export function PixelPet(): JSX.Element | null {
     }
   }, []);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    dragRef.current = { x: e.screenX, y: e.screenY, dragging: true };
-    void ipc().window.setPetInteractive(true);
-  }, []);
-
-  const handleMouseMove = useCallback(async (e: React.MouseEvent) => {
+  const finishDrag = useCallback(() => {
     if (!dragRef.current.dragging) return;
-    const dx = e.screenX - dragRef.current.x;
-    const dy = e.screenY - dragRef.current.y;
-    if (dx === 0 && dy === 0) return;
-    const bounds = await ipc().window.getBounds();
-    await ipc().window.setBounds({
-      x: bounds.x + dx,
-      y: bounds.y + dy,
-    });
-    dragRef.current.x = e.screenX;
-    dragRef.current.y = e.screenY;
-    usePetStore.getState().touchInteraction();
+
+    const wasDrag = dragRef.current.didDrag;
+    dragRef.current.dragging = false;
+    dragRef.current.didDrag = false;
+    void ipc().window.endDrag();
+
+    if (!wasDrag) {
+      runClickReaction();
+    }
+  }, [runClickReaction]);
+
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    if (!dragRef.current.dragging) return;
+    const dx = Math.abs(e.screenX - dragRef.current.startX);
+    const dy = Math.abs(e.screenY - dragRef.current.startY);
+    if (dx > DRAG_THRESHOLD_PX || dy > DRAG_THRESHOLD_PX) {
+      dragRef.current.didDrag = true;
+      usePetStore.getState().touchInteraction();
+    }
   }, []);
 
-  const handleMouseUp = useCallback(() => {
-    dragRef.current.dragging = false;
+  const handlePointerUp = useCallback(() => {
+    finishDrag();
+  }, [finishDrag]);
+
+  useEffect(() => {
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      if (dragRef.current.dragging) {
+        void ipc().window.endDrag();
+        dragRef.current.dragging = false;
+      }
+    };
+  }, [handlePointerMove, handlePointerUp]);
+
+  const handlePointerDown = useCallback(async (e: React.PointerEvent<HTMLImageElement>) => {
+    if (e.button !== 0) return;
+
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+
+    const bounds = await ipc().window.getBounds();
+    const offsetX = e.screenX - bounds.x;
+    const offsetY = e.screenY - bounds.y;
+
+    dragRef.current = {
+      dragging: true,
+      didDrag: false,
+      startX: e.screenX,
+      startY: e.screenY,
+    };
+
+    void ipc().window.setPetInteractive(true);
+    void ipc().window.startDrag(offsetX, offsetY);
   }, []);
 
   if (isPaused || settings?.petEnabled === false) {
@@ -89,9 +131,6 @@ export function PixelPet(): JSX.Element | null {
       className="pixel-pet-container"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeaveCapture={handleMouseUp}
     >
       {speechVisible && speechMessage && <SpeechBubble message={speechMessage} />}
       {petState === 'sleeping' && (
@@ -107,8 +146,7 @@ export function PixelPet(): JSX.Element | null {
         alt="PixelPaw otter"
         draggable={false}
         style={{ width: size, height: size, opacity }}
-        onMouseDown={handleMouseDown}
-        onClick={handleClick}
+        onPointerDown={handlePointerDown}
         onContextMenu={(e) => e.preventDefault()}
       />
       <PetContextMenu />

@@ -22,4 +22,12 @@ export function registerWindowIpc(): void {
   ipcMain.handle('window:setBounds', (_event, bounds: Partial<WindowBounds>) => {
     windowManager.setBounds(bounds);
   });
+
+  ipcMain.handle('window:startDrag', (_event, offsetX: number, offsetY: number) => {
+    windowManager.startDrag(offsetX, offsetY);
+  });
+
+  ipcMain.handle('window:endDrag', () => {
+    windowManager.endDrag();
+  });
 }

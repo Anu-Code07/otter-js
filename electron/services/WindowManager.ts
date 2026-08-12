@@ -1,6 +1,7 @@
 import { BrowserWindow, screen } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { cursorTracker } from './CursorTracker';
 import { logger } from './Logger';
 import { settingsService } from './SettingsService';
 import type { WindowBounds } from '../../src/types/system';
@@ -34,6 +35,9 @@ export class WindowManager {
   private petWindow: BrowserWindow | null = null;
   private settingsWindow: BrowserWindow | null = null;
   private petInteractive = true;
+  private isDragging = false;
+  private dragOffset: { x: number; y: number } | null = null;
+  private dragUnsubscribe: (() => void) | null = null;
 
   createPetWindow(): BrowserWindow {
     if (this.petWindow && !this.petWindow.isDestroyed()) {
@@ -205,7 +209,39 @@ export class WindowManager {
     this.savePetBounds();
   }
 
+  startDrag(offsetX: number, offsetY: number): void {
+    if (!this.petWindow || this.petWindow.isDestroyed()) return;
+
+    this.endDrag();
+    this.isDragging = true;
+    this.dragOffset = { x: offsetX, y: offsetY };
+
+    this.dragUnsubscribe = cursorTracker.onMove((position) => {
+      if (!this.petWindow || this.petWindow.isDestroyed() || !this.dragOffset) return;
+      const { width, height } = this.petWindow.getBounds();
+      this.petWindow.setBounds({
+        x: Math.round(position.x - this.dragOffset.x),
+        y: Math.round(position.y - this.dragOffset.y),
+        width,
+        height,
+      });
+    });
+  }
+
+  endDrag(): void {
+    if (this.dragUnsubscribe) {
+      this.dragUnsubscribe();
+      this.dragUnsubscribe = null;
+    }
+    this.dragOffset = null;
+    if (this.isDragging) {
+      this.isDragging = false;
+      this.savePetBounds();
+    }
+  }
+
   private savePetBounds(): void {
+    if (this.isDragging) return;
     const settings = settingsService.get();
     if (!settings.rememberPosition || !this.petWindow) return;
     const bounds = this.petWindow.getBounds();
