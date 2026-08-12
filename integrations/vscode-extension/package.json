@@ -1,0 +1,23 @@
+{
+  "name": "pixelpaw-vscode",
+  "displayName": "PixelPaw Integration",
+  "description": "Send attention signals from VS Code to PixelPaw",
+  "version": "1.0.0",
+  "publisher": "pixelpaw",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "pixelpaw.needsAttention",
+        "title": "PixelPaw: Signal Needs Attention"
+      },
+      {
+        "command": "pixelpaw.taskDone",
+        "title": "PixelPaw: Signal Task Complete"
+      }
+    ]
+  }
+}
