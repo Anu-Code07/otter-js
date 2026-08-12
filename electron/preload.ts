@@ -5,11 +5,10 @@ import type { CursorPosition } from '../src/types/system';
 import type { AppSettings, WindowBounds } from '../src/types/system';
 import type { PetState } from '../src/types/pet';
 
-const assetsBase = new URL('../dist/assets/', import.meta.url);
-
 const pixelPaw = {
   assets: {
-    resolve: (relativePath: string): string => new URL(relativePath, assetsBase).href,
+    resolve: (relativePath: string): string =>
+      ipcRenderer.sendSync('assets:resolve-sync', relativePath) as string,
   },
   cursor: {
     onMove: (callback: (position: CursorPosition) => void): (() => void) => {

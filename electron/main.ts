@@ -5,6 +5,7 @@ import { registerAttentionIpc } from './ipc/attention';
 import { registerWindowIpc } from './ipc/window';
 import { registerSettingsIpc } from './ipc/settings';
 import { registerSystemIpc, createTray, syncTrayFromSettings } from './ipc/system';
+import { registerAssetsIpc } from './ipc/assets';
 import { cursorTracker } from './services/CursorTracker';
 import { attentionManager } from './services/attention/AttentionManager';
 import { windowManager } from './services/WindowManager';
@@ -22,6 +23,7 @@ if (process.platform === 'darwin') {
 }
 
 function registerIpcHandlers(): void {
+  registerAssetsIpc();
   registerCursorIpc();
   registerAttentionIpc();
   registerClaudeIpc();
