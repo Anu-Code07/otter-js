@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { attentionManager } from '../services/attention/AttentionManager';
 import type { AttentionSourceId, AttentionSnapshot } from '../../src/types/attention';
 import type { AttentionSignal } from '../../src/types/attention';
+import { manageIpcSubscription } from './subscriptionManager';
 
 export function registerAttentionIpc(): void {
   ipcMain.handle('attention:getSnapshot', () => attentionManager.getSnapshot());
@@ -18,11 +19,11 @@ export function registerAttentionIpc(): void {
   });
 
   ipcMain.on('attention:subscribe', (event) => {
-    const unsubscribe = attentionManager.onSnapshotChange((snapshot: AttentionSnapshot) => {
-      if (!event.sender.isDestroyed()) {
-        event.sender.send('attention:snapshotChange', snapshot);
-      }
-    });
-    event.sender.once('destroyed', unsubscribe);
+    manageIpcSubscription<AttentionSnapshot>(
+      event,
+      'attention',
+      'attention:snapshotChange',
+      (emit) => attentionManager.onSnapshotChange(emit),
+    );
   });
 }

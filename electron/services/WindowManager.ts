@@ -105,7 +105,7 @@ export class WindowManager {
     });
 
     const showPet = (): void => {
-      if (!this.petWindow || this.petWindow.isDestroyed()) return;
+      if (!this.petWindow || this.petWindow.isDestroyed() || this.petWindow.isVisible()) return;
       this.petWindow.show();
       this.petWindow.moveTop();
       this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);

@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
 import { settingsService } from '../services/SettingsService';
 import type { AppSettings } from '../../src/types/system';
+import { manageIpcSubscription } from './subscriptionManager';
 
 export function registerSettingsIpc(): void {
   ipcMain.handle('settings:get', () => settingsService.get());
@@ -14,11 +15,11 @@ export function registerSettingsIpc(): void {
   });
 
   ipcMain.on('settings:subscribe', (event) => {
-    const unsubscribe = settingsService.onChange((settings) => {
-      if (!event.sender.isDestroyed()) {
-        event.sender.send('settings:change', settings);
-      }
-    });
-    event.sender.once('destroyed', unsubscribe);
+    manageIpcSubscription<AppSettings>(
+      event,
+      'settings',
+      'settings:change',
+      (emit) => settingsService.onChange(emit),
+    );
   });
 }

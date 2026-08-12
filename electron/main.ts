@@ -26,8 +26,6 @@ function registerIpcHandlers(): void {
 }
 
 function startServices(): void {
-  const settings = settingsService.get();
-  settingsService.configureStartup(settings.launchAtStartup);
   cursorTracker.start();
   attentionManager.start();
 
