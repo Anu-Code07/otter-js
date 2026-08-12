@@ -55,11 +55,7 @@ app.whenReady().then(() => {
 });
 
 app.on('second-instance', () => {
-  const petWindow = windowManager.getPetWindow();
-  if (petWindow && !petWindow.isDestroyed()) {
-    petWindow.show();
-    petWindow.moveTop();
-  }
+  windowManager.revealPetWindow();
 });
 
 app.on('window-all-closed', () => {

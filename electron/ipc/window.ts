@@ -30,4 +30,12 @@ export function registerWindowIpc(): void {
   ipcMain.handle('window:endDrag', () => {
     windowManager.endDrag();
   });
+
+  ipcMain.handle('window:revealPet', () => {
+    windowManager.revealPetWindow();
+  });
+
+  ipcMain.handle('window:resetPosition', () => {
+    windowManager.resetPetPosition();
+  });
 }

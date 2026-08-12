@@ -10,13 +10,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function clampWindowToDisplay(bounds: WindowBounds): WindowBounds {
   const displays = screen.getAllDisplays();
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
+
   const onScreen = displays.some((display) => {
     const { x, y, width, height } = display.workArea;
     return (
-      bounds.x >= x - 50 &&
-      bounds.y >= y - 50 &&
-      bounds.x < x + width &&
-      bounds.y < y + height
+      centerX >= x &&
+      centerY >= y &&
+      centerX < x + width &&
+      centerY < y + height
     );
   });
 
@@ -24,8 +27,8 @@ function clampWindowToDisplay(bounds: WindowBounds): WindowBounds {
 
   const primary = screen.getPrimaryDisplay().workArea;
   return {
-    x: primary.x + primary.width - bounds.width - 40,
-    y: primary.y + primary.height - bounds.height - 40,
+    x: primary.x + Math.round((primary.width - bounds.width) / 2),
+    y: primary.y + Math.round((primary.height - bounds.height) / 2),
     width: bounds.width,
     height: bounds.height,
   };
@@ -76,7 +79,8 @@ export class WindowManager {
       hasShadow: false,
       focusable: true,
       show: false,
-      ...(isMac ? { type: 'panel' as const } : {}),
+      fullscreenable: false,
+      ...(isMac ? { acceptFirstMouse: true } : {}),
       webPreferences: {
         preload: path.join(__dirname, 'preload.mjs'),
         contextIsolation: true,
@@ -109,15 +113,16 @@ export class WindowManager {
     });
 
     const showPet = (): void => {
-      if (!this.petWindow || this.petWindow.isDestroyed() || this.petWindow.isVisible()) return;
-      this.petWindow.show();
-      this.petWindow.moveTop();
-      this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
+      if (!this.petWindow || this.petWindow.isDestroyed()) return;
+      this.revealPetWindow();
       logger.info(`Pet window visible at ${JSON.stringify(this.petWindow.getBounds())}`);
     };
 
+    this.petWindow.webContents.on('did-finish-load', () => {
+      showPet();
+    });
     this.petWindow.once('ready-to-show', showPet);
-    setTimeout(showPet, 1500);
+    setTimeout(showPet, 500);
 
     logger.info('Pet window created');
     return this.petWindow;
@@ -167,6 +172,35 @@ export class WindowManager {
     return this.petWindow;
   }
 
+  revealPetWindow(): void {
+    if (!this.petWindow || this.petWindow.isDestroyed()) return;
+    const settings = settingsService.get();
+    if (process.platform === 'darwin') {
+      this.petWindow.showInactive();
+    } else {
+      this.petWindow.show();
+    }
+    this.petWindow.moveTop();
+    this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
+    this.petWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    this.petWindow.setOpacity(settings.petOpacity);
+  }
+
+  resetPetPosition(): void {
+    const settings = settingsService.get();
+    const size = settings.petSize + 80;
+    const { workArea } = screen.getPrimaryDisplay();
+    const bounds: WindowBounds = {
+      x: workArea.x + Math.round((workArea.width - size) / 2),
+      y: workArea.y + Math.round((workArea.height - size) / 2),
+      width: size,
+      height: size,
+    };
+    this.setBounds(bounds);
+    this.revealPetWindow();
+    logger.info(`Pet window reset to ${JSON.stringify(bounds)}`);
+  }
+
   setPetInteractive(interactive: boolean): void {
     this.petInteractive = interactive;
     this.applyMouseTransparency();
@@ -174,6 +208,11 @@ export class WindowManager {
 
   applyMouseTransparency(): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
+    // macOS transparent windows can become invisible with ignoreMouseEvents enabled.
+    if (process.platform === 'darwin') {
+      this.petWindow.setIgnoreMouseEvents(false);
+      return;
+    }
     if (this.petInteractive) {
       this.petWindow.setIgnoreMouseEvents(false);
     } else {

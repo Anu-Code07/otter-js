@@ -26,6 +26,8 @@ export interface PixelPawAPI {
     setPetInteractive: (interactive: boolean) => Promise<void>;
     startDrag: (offsetX: number, offsetY: number) => Promise<void>;
     endDrag: () => Promise<void>;
+    revealPet: () => Promise<void>;
+    resetPosition: () => Promise<void>;
   };
   settings: {
     get: () => Promise<AppSettings>;
