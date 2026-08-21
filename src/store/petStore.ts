@@ -14,6 +14,7 @@ const emptySnapshot = (): AttentionSnapshot => ({
     build: createIdleSignal('build'),
     terminal: createIdleSignal('terminal'),
     git: createIdleSignal('git'),
+    meeting: createIdleSignal('meeting'),
     integration: createIdleSignal('integration'),
   },
 });
@@ -34,6 +35,7 @@ export interface PetStore {
   petOffsetY: number;
   facing: 'left' | 'right';
   isPaused: boolean;
+  isDragging: boolean;
   lastInteractionAt: number;
   lastAlertAt: number;
   lastAlertKey: string | null;
@@ -51,6 +53,7 @@ export interface PetStore {
   setPetOffset: (x: number, y: number) => void;
   setFacing: (facing: 'left' | 'right') => void;
   setPaused: (paused: boolean) => void;
+  setDragging: (dragging: boolean) => void;
   touchInteraction: () => void;
   markAlerted: (key: string) => void;
   resetAlertKey: () => void;
@@ -72,6 +75,7 @@ export const usePetStore = create<PetStore>((set, get) => ({
   petOffsetY: 0,
   facing: 'right',
   isPaused: false,
+  isDragging: false,
   lastInteractionAt: Date.now(),
   lastAlertAt: 0,
   lastAlertKey: null,
@@ -102,6 +106,7 @@ export const usePetStore = create<PetStore>((set, get) => ({
   setPetOffset: (petOffsetX, petOffsetY) => set({ petOffsetX, petOffsetY }),
   setFacing: (facing) => set({ facing }),
   setPaused: (isPaused) => set({ isPaused }),
+  setDragging: (isDragging) => set({ isDragging }),
   touchInteraction: () => set({ lastInteractionAt: Date.now() }),
   markAlerted: (key) => set({ lastAlertAt: Date.now(), lastAlertKey: key }),
   resetAlertKey: () => set({ lastAlertKey: null }),

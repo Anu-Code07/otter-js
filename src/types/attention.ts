@@ -4,6 +4,7 @@ export type AttentionSourceId =
   | 'build'
   | 'terminal'
   | 'git'
+  | 'meeting'
   | 'integration';
 
 export type AttentionStatus =
@@ -46,6 +47,7 @@ export const ATTENTION_SOURCE_LABELS: Record<AttentionSourceId, string> = {
   build: 'Build / CI',
   terminal: 'Terminal',
   git: 'Git',
+  meeting: 'Meetings',
   integration: 'Integration',
 };
 
@@ -81,6 +83,11 @@ export const DEFAULT_ATTENTION_MESSAGES: Record<AttentionSourceId, string[]> = {
     'Merge conflict?',
     'Git hook waiting',
     'Check your repo status',
+  ],
+  meeting: [
+    'Meeting time — I\'ll stay quiet',
+    'Focus mode',
+    'In a call',
   ],
   integration: [
     'Something needs you',

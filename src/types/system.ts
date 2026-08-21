@@ -14,6 +14,8 @@ export interface AttentionSourceSettings {
   terminalAlerts: boolean;
   gitDetectionEnabled: boolean;
   gitAlerts: boolean;
+  meetingDetectionEnabled: boolean;
+  meetingAlerts: boolean;
   integrationWebhookEnabled: boolean;
   integrationAlerts: boolean;
   integrationWebhookPort: number;
@@ -49,7 +51,7 @@ export interface AppSettings extends AttentionSourceSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   launchAtStartup: false,
-  petSize: 180,
+  petSize: 160,
   petOpacity: 1,
   alwaysOnTop: true,
   rememberPosition: true,
@@ -67,6 +69,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   terminalAlerts: true,
   gitDetectionEnabled: true,
   gitAlerts: true,
+  meetingDetectionEnabled: true,
+  meetingAlerts: false,
   integrationWebhookEnabled: true,
   integrationAlerts: true,
   integrationWebhookPort: 47832,
@@ -84,7 +88,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   selectedPetId: 'otter',
   inactivityTimeoutMs: 120_000,
   notificationCooldownMs: 60_000,
-  settingsMigrationVersion: 3,
+  settingsMigrationVersion: 4,
 };
 
 export interface WindowBounds {

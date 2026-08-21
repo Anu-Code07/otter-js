@@ -25,23 +25,31 @@ function getCenteredPetBounds(petSize: number): WindowBounds {
   };
 }
 
-function clampWindowToDisplay(bounds: WindowBounds): WindowBounds {
+function clampBoundsToWorkArea(bounds: WindowBounds): WindowBounds {
   const displays = screen.getAllDisplays();
   const centerX = bounds.x + bounds.width / 2;
   const centerY = bounds.y + bounds.height / 2;
 
-  const onScreen = displays.some((display) => {
-    const { x, y, width, height } = display.workArea;
-    return (
-      centerX >= x &&
-      centerY >= y &&
-      centerX < x + width &&
-      centerY < y + height
-    );
-  });
+  const display =
+    displays.find((d) => {
+      const { x, y, width, height } = d.workArea;
+      return (
+        centerX >= x &&
+        centerY >= y &&
+        centerX < x + width &&
+        centerY < y + height
+      );
+    }) ?? screen.getPrimaryDisplay();
 
-  if (onScreen) return bounds;
-  return getCenteredPetBounds(bounds.width - WINDOW_CHROME);
+  const { x, y, width, height } = display.workArea;
+  const maxX = x + width - bounds.width;
+  const maxY = y + height - bounds.height;
+
+  return {
+    ...bounds,
+    x: Math.max(x, Math.min(bounds.x, maxX)),
+    y: Math.max(y, Math.min(bounds.y, maxY)),
+  };
 }
 
 export class WindowManager {
@@ -68,7 +76,7 @@ export class WindowManager {
     const rawBounds: WindowBounds = savedBounds
       ? { ...savedBounds, width: size, height: size }
       : getCenteredPetBounds(settings.petSize);
-    const initialBounds = clampWindowToDisplay(rawBounds);
+    const initialBounds = clampBoundsToWorkArea(rawBounds);
 
     const isMac = process.platform === 'darwin';
 
@@ -269,7 +277,8 @@ export class WindowManager {
   setBounds(partial: Partial<WindowBounds>): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
     const current = this.petWindow.getBounds();
-    this.petWindow.setBounds({ ...current, ...partial });
+    const next = clampBoundsToWorkArea({ ...current, ...partial });
+    this.petWindow.setBounds(next);
     this.savePetBounds();
   }
 

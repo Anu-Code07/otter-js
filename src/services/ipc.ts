@@ -10,6 +10,7 @@ const idleSnapshot = (): AttentionSnapshot => ({
     build: createIdleSignal('build'),
     terminal: createIdleSignal('terminal'),
     git: createIdleSignal('git'),
+    meeting: createIdleSignal('meeting'),
     integration: createIdleSignal('integration'),
   },
 });

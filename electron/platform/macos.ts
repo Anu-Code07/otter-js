@@ -3,12 +3,15 @@ import { promisify } from 'util';
 import type { ClaudeStatus } from '../../src/types/claude';
 import type { PermissionDialogInfo } from './permission';
 import { matchesPermissionDialog } from './permission';
+import type { MeetingInfo } from './meeting';
+import { matchesMeetingSignals } from './meeting';
 
 const execAsync = promisify(exec);
 
 export interface PlatformAdapter {
   detectClaude(): Promise<ClaudeStatus>;
   detectPermissionDialog(): Promise<PermissionDialogInfo>;
+  detectMeeting(): Promise<MeetingInfo>;
 }
 
 async function isProcessRunning(name: string): Promise<boolean> {
@@ -96,5 +99,11 @@ export const macosAdapter: PlatformAdapter = {
       };
     }
     return { detected: false };
+  },
+
+  async detectMeeting(): Promise<MeetingInfo> {
+    const appName = await getFrontmostAppName();
+    const title = await getFrontWindowTitle();
+    return matchesMeetingSignals(appName, title);
   },
 };

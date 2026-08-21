@@ -9,12 +9,12 @@ const store = new Store<AppSettings>({
   defaults: DEFAULT_SETTINGS,
 });
 
-const SETTINGS_MIGRATION_VERSION = 3;
+const SETTINGS_MIGRATION_VERSION = 4;
 
 type SettingsKey = keyof AppSettings;
 
 export function effectivePetSize(size: number): number {
-  return Math.max(160, size);
+  return Math.max(64, Math.min(200, size));
 }
 
 export class SettingsService {
@@ -23,10 +23,16 @@ export class SettingsService {
     if (version >= SETTINGS_MIGRATION_VERSION) return;
 
     store.delete('windowBounds');
-    store.set('petSize', 180);
+    store.set('petSize', 160);
     store.set('petOpacity', 1);
     store.set('petEnabled', true);
     store.set('alwaysOnTop', true);
+    if (store.get('meetingDetectionEnabled') === undefined) {
+      store.set('meetingDetectionEnabled', true);
+    }
+    if (store.get('meetingAlerts') === undefined) {
+      store.set('meetingAlerts', false);
+    }
     store.set('settingsMigrationVersion', SETTINGS_MIGRATION_VERSION);
     logger.info('Settings migrated — pet reset to large centered size');
   }

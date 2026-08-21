@@ -7,6 +7,7 @@ export function attentionSignalToPetState(signal: AttentionSignal | null): PetSt
   if (!signal) return null;
   switch (signal.status) {
     case 'working':
+      if (signal.sourceId === 'meeting') return 'in_meeting';
       return signal.sourceId === 'claude' ? 'claude_working' : 'attention_working';
     case 'needs_user':
       return signal.sourceId === 'claude' ? 'claude_waiting' : 'attention_waiting';
@@ -40,6 +41,8 @@ export function animationForState(state: PetState, facing: 'left' | 'right'): Pe
       return 'celebrate';
     case 'annoyed':
       return 'annoyed';
+    case 'in_meeting':
+      return 'sit';
     default:
       return 'idle';
   }
@@ -113,5 +116,6 @@ export function isBusyPetState(state: PetState): boolean {
     'sleeping',
     'claude_working',
     'attention_working',
+    'in_meeting',
   ].includes(state);
 }

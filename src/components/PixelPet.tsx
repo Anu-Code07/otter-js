@@ -65,6 +65,7 @@ export function PixelPet(): JSX.Element | null {
     const wasDrag = dragRef.current.didDrag;
     dragRef.current.dragging = false;
     dragRef.current.didDrag = false;
+    usePetStore.getState().setDragging(false);
     void ipc().window.endDrag();
 
     if (!wasDrag) {
@@ -119,6 +120,7 @@ export function PixelPet(): JSX.Element | null {
       startY: e.screenY,
     };
 
+    usePetStore.getState().setDragging(true);
     void ipc().window.setPetInteractive(true);
     void ipc().window.startDrag(offsetX, offsetY);
   }, []);

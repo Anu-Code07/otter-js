@@ -1,5 +1,7 @@
 /* global vscode */
 
+const http = require('http');
+
 const PORT = 47832;
 
 /**

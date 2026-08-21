@@ -32,7 +32,8 @@ export type PetState =
   | 'attention_waiting'
   | 'excited'
   | 'alert'
-  | 'annoyed';
+  | 'annoyed'
+  | 'in_meeting';
 
 export interface AnimationDefinition {
   name: PetAnimation;

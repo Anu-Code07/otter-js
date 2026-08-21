@@ -1,14 +1,37 @@
 import { exec } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { promisify } from 'util';
+import type { AppSettings } from '../../../src/types/system';
 import type { AttentionSignal } from '../../../src/types/attention';
 import { BaseAttentionSource } from './BaseAttentionSource';
 import { createIdleSignal } from './utils';
 
 const execAsync = promisify(exec);
 
+export function resolveGitWorkingDirectory(settings: Pick<AppSettings, 'buildWatchPath' | 'terminalWatchPath'>): string {
+  const candidates = [settings.buildWatchPath, settings.terminalWatchPath]
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => p.replace(/^~/, os.homedir()));
+
+  for (const candidate of candidates) {
+    try {
+      if (!fs.existsSync(candidate)) continue;
+      const stat = fs.statSync(candidate);
+      return stat.isDirectory() ? candidate : path.dirname(candidate);
+    } catch {
+      continue;
+    }
+  }
+
+  return os.homedir();
+}
+
 export class GitAttentionSource extends BaseAttentionSource {
   readonly id = 'git' as const;
-  private cwd = process.cwd();
+  private cwd = resolveGitWorkingDirectory({ buildWatchPath: '', terminalWatchPath: '' });
 
   constructor() {
     super('git');

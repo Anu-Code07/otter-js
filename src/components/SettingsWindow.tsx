@@ -20,6 +20,7 @@ const SOURCE_TOGGLES: Array<{
   { id: 'build', detectionKey: 'buildDetectionEnabled', alertKey: 'buildAlerts' },
   { id: 'terminal', detectionKey: 'terminalDetectionEnabled', alertKey: 'terminalAlerts' },
   { id: 'git', detectionKey: 'gitDetectionEnabled', alertKey: 'gitAlerts' },
+  { id: 'meeting', detectionKey: 'meetingDetectionEnabled', alertKey: 'meetingAlerts' },
   { id: 'integration', detectionKey: 'integrationWebhookEnabled', alertKey: 'integrationAlerts' },
 ];
 
@@ -45,7 +46,7 @@ export function SettingsWindow({ onClose }: SettingsWindowProps) {
   }, []);
 
   const clearSimulation = useCallback(async () => {
-    const sources: AttentionSourceId[] = ['claude', 'permission', 'build', 'terminal', 'git', 'integration'];
+    const sources: AttentionSourceId[] = ['claude', 'permission', 'build', 'terminal', 'git', 'meeting', 'integration'];
     await Promise.all(sources.map((id) => ipc().attention.simulate(id, null)));
     await ipc().claude.simulateStatus(null);
   }, []);
@@ -66,7 +67,7 @@ export function SettingsWindow({ onClose }: SettingsWindowProps) {
       <section>
         <h2>General</h2>
         <label><input type="checkbox" checked={settings.launchAtStartup} onChange={(e) => void update({ launchAtStartup: e.target.checked })} /> Launch at startup</label>
-        <label>Pet size: {settings.petSize}px<input type="range" min={64} max={160} value={settings.petSize} onChange={(e) => void update({ petSize: Number(e.target.value) })} /></label>
+        <label>Pet size: {settings.petSize}px<input type="range" min={64} max={200} value={settings.petSize} onChange={(e) => void update({ petSize: Number(e.target.value) })} /></label>
         <label>Opacity: {Math.round(settings.petOpacity * 100)}%<input type="range" min={0.3} max={1} step={0.05} value={settings.petOpacity} onChange={(e) => void update({ petOpacity: Number(e.target.value) })} /></label>
         <label><input type="checkbox" checked={settings.alwaysOnTop} onChange={(e) => void update({ alwaysOnTop: e.target.checked })} /> Always on top</label>
         <label><input type="checkbox" checked={settings.rememberPosition} onChange={(e) => void update({ rememberPosition: e.target.checked })} /> Remember position</label>
@@ -142,6 +143,7 @@ export function SettingsWindow({ onClose }: SettingsWindowProps) {
               <button type="button" onClick={() => void simulate('build', { status: 'success', priority: 'medium', message: 'Build succeeded!' })}>Build success</button>
               <button type="button" onClick={() => void simulate('terminal', { status: 'needs_user', priority: 'high', message: 'Terminal needs input' })}>Terminal prompt</button>
               <button type="button" onClick={() => void simulate('git', { status: 'needs_user', priority: 'high', message: 'Merge conflict' })}>Git conflict</button>
+              <button type="button" onClick={() => void simulate('meeting', { status: 'working', priority: 'low', message: 'Zoom meeting' })}>In meeting</button>
               <button type="button" onClick={() => void simulate('integration', { status: 'needs_user', priority: 'high', message: 'VS Code needs you' })}>Integration</button>
               <button type="button" onClick={() => void clearSimulation()}>Clear all</button>
             </div>

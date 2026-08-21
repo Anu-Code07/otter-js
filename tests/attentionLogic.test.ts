@@ -17,6 +17,7 @@ describe('attentionLogic', () => {
       build: createIdleSignal('build'),
       terminal: createIdleSignal('terminal'),
       git: createIdleSignal('git'),
+      meeting: createIdleSignal('meeting'),
       integration: createIdleSignal('integration'),
     });
     expect(snapshot.active?.sourceId).toBe('permission');

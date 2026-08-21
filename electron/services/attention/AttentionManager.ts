@@ -10,7 +10,8 @@ import { claudeAttentionSource } from './ClaudeAttentionSource';
 import { permissionAttentionSource } from './PermissionAttentionSource';
 import { buildAttentionSource } from './BuildAttentionSource';
 import { terminalAttentionSource } from './TerminalAttentionSource';
-import { gitAttentionSource } from './GitAttentionSource';
+import { gitAttentionSource, resolveGitWorkingDirectory } from './GitAttentionSource';
+import { meetingAttentionSource } from './MeetingAttentionSource';
 import { integrationWebhookSource } from './IntegrationWebhookSource';
 import { BaseAttentionSource } from './BaseAttentionSource';
 
@@ -21,6 +22,7 @@ export class AttentionManager {
     build: buildAttentionSource,
     terminal: terminalAttentionSource,
     git: gitAttentionSource,
+    meeting: meetingAttentionSource,
     integration: integrationWebhookSource,
   };
 
@@ -30,6 +32,7 @@ export class AttentionManager {
     build: buildAttentionSource.getSignal(),
     terminal: terminalAttentionSource.getSignal(),
     git: gitAttentionSource.getSignal(),
+    meeting: meetingAttentionSource.getSignal(),
     integration: integrationWebhookSource.getSignal(),
   };
 
@@ -62,7 +65,9 @@ export class AttentionManager {
     this.sources.build.setEnabled(s.buildDetectionEnabled);
     this.sources.terminal.setEnabled(s.terminalDetectionEnabled);
     this.sources.git.setEnabled(s.gitDetectionEnabled);
+    this.sources.meeting.setEnabled(s.meetingDetectionEnabled);
     this.sources.integration.setEnabled(s.integrationWebhookEnabled);
+    gitAttentionSource.setWorkingDirectory(resolveGitWorkingDirectory(s));
     integrationWebhookSource.restartServer();
   }
 

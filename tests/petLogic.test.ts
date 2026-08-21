@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
   claudeStatusToPetState,
+  attentionSignalToPetState,
   cursorReactionLevel,
   distanceBetween,
   shouldResetClaudeAlert,
   shouldTriggerClaudeAlert,
   pickWeighted,
+  isBusyPetState,
 } from '../src/services/petLogic';
+import { createIdleSignal } from '../src/services/attentionLogic';
 
 describe('petLogic', () => {
   describe('distanceBetween', () => {
@@ -71,6 +74,19 @@ describe('petLogic', () => {
       const items = [{ action: 'a', weight: 1 }, { action: 'b', weight: 99 }];
       const picked = pickWeighted(items);
       expect(items).toContainEqual(picked);
+    });
+  });
+
+  describe('attentionSignalToPetState', () => {
+    it('maps meeting working to in_meeting', () => {
+      const signal = { ...createIdleSignal('meeting'), status: 'working' as const };
+      expect(attentionSignalToPetState(signal)).toBe('in_meeting');
+    });
+  });
+
+  describe('isBusyPetState', () => {
+    it('treats in_meeting as busy', () => {
+      expect(isBusyPetState('in_meeting')).toBe(true);
     });
   });
 });

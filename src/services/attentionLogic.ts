@@ -85,6 +85,7 @@ export function isSourceAlertsEnabled(
     buildAlerts: boolean;
     terminalAlerts: boolean;
     gitAlerts: boolean;
+    meetingAlerts: boolean;
     integrationAlerts: boolean;
   },
 ): boolean {
@@ -95,6 +96,7 @@ export function isSourceAlertsEnabled(
     case 'build': return settings.buildAlerts;
     case 'terminal': return settings.terminalAlerts;
     case 'git': return settings.gitAlerts;
+    case 'meeting': return settings.meetingAlerts;
     case 'integration': return settings.integrationAlerts;
     default: return false;
   }

@@ -15,6 +15,7 @@ PixelPaw watches your desktop, reacts to your cursor, and alerts you when someth
 - **Permission dialog detection** — macOS/Windows/Linux window title heuristics
 - **Build & terminal watchers** — monitor log files for failures and prompts
 - **Git detection** — merge conflicts and dirty states
+- **Meeting detection** — Zoom, Teams, Google Meet, and similar calls (pet sits quietly)
 - **Integration webhook** — local HTTP API for VS Code, CI, custom tools
 - **System tray** — pause, settings, quick controls
 - **Do not disturb** — scheduled quiet hours

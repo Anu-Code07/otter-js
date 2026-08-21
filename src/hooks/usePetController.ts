@@ -25,6 +25,8 @@ import type { AttentionSignal, AttentionSnapshot } from '../types/attention';
 import type { PetAnimation, PetState } from '../types/pet';
 
 const PET_CENTER_OFFSET = 48;
+const FOLLOW_STEP_PX = 12;
+const CURSOR_ACTIVITY_THRESHOLD = 15;
 
 export function usePetController(): {
   frameSrc: string;
@@ -86,6 +88,13 @@ export function usePetController(): {
     const prev = prevSignalRef.current ?? usePetStore.getState().attentionSnapshot.active;
     const active = snapshot.active;
     store.setAttentionSnapshot(snapshot);
+
+    if (
+      usePetStore.getState().petState === 'in_meeting' &&
+      (!active || active.sourceId !== 'meeting')
+    ) {
+      transitionTo('idle');
+    }
 
     if (active && prev && shouldResetAttentionAlert(prev, active)) {
       store.resetAlertKey();
@@ -149,7 +158,13 @@ export function usePetController(): {
   useEffect(() => {
     void ipc().settings.get().then(store.setSettings);
     const unsubSettings = ipc().settings.onChange(store.setSettings);
-    const unsubCursor = ipc().cursor.onMove(store.setCursorPosition);
+    const unsubCursor = ipc().cursor.onMove((position) => {
+      const prev = usePetStore.getState().cursorPosition;
+      if (distanceBetween(prev, position) >= CURSOR_ACTIVITY_THRESHOLD) {
+        usePetStore.getState().touchInteraction();
+      }
+      store.setCursorPosition(position);
+    });
     const unsubAttention = ipc().attention.onSnapshotChange(processSnapshot);
 
     return () => {
@@ -170,6 +185,38 @@ export function usePetController(): {
     };
     void updateDistance();
   }, [store.cursorPosition, store]);
+
+  useEffect(() => {
+    if (store.isPaused || store.isDragging) return;
+    const settings = store.settings;
+    if (!settings?.followCursor) return;
+
+    const intervalId = setInterval(() => {
+      const state = usePetStore.getState();
+      if (state.isPaused || state.isDragging || !state.settings?.followCursor) return;
+      if (isBusyPetState(state.petState)) return;
+
+      const level = cursorReactionLevel(state.cursorDistance);
+      if (level === 'far') return;
+
+      void (async () => {
+        const bounds = await ipc().window.getBounds();
+        const targetX = state.cursorPosition.x - PET_CENTER_OFFSET;
+        const targetY = state.cursorPosition.y - PET_CENTER_OFFSET;
+        const dx = targetX - bounds.x;
+        const dy = targetY - bounds.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 6) return;
+
+        const step = Math.min(dist, FOLLOW_STEP_PX);
+        const newX = bounds.x + (dx / dist) * step;
+        const newY = bounds.y + (dy / dist) * step;
+        void ipc().window.setBounds({ x: Math.round(newX), y: Math.round(newY) });
+      })();
+    }, 50);
+
+    return () => clearInterval(intervalId);
+  }, [store.isPaused, store.isDragging, store.settings?.followCursor]);
 
   useEffect(() => {
     if (store.isPaused) return;
@@ -193,20 +240,24 @@ export function usePetController(): {
     if (settings.followCursor && level !== 'far') {
       if (Math.random() < personality.ignoreCursorChance) return;
       if (level === 'interact') {
-        if (Math.random() < 0.3) {
+        if (Math.random() < personality.curiosityChance) {
           store.showSpeech('oh?', 1500);
           playAnimation('curious');
         }
         return;
       }
       if (level === 'approach' && Math.random() < settings.interactionFrequency) {
-        store.setFacing(store.cursorPosition.x < (window.screen?.width ?? 1920) / 2 ? 'left' : 'right');
+        void ipc().window.getBounds().then((bounds) => {
+          store.setFacing(
+            store.cursorPosition.x < bounds.x + PET_CENTER_OFFSET ? 'left' : 'right',
+          );
+        });
         transitionTo('following_cursor');
         return;
       }
       if (level === 'look') playAnimation('curious', true);
     }
-  }, [store.cursorDistance, store.settings, store.isPaused, store.petState, store, transitionTo, playAnimation, petDefinition]);
+  }, [store.cursorDistance, store.settings, store.isPaused, store.petState, store.isDragging, store, transitionTo, playAnimation, petDefinition]);
 
   useEffect(() => {
     if (store.isPaused || !store.settings?.randomWandering) return;
