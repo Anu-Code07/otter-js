@@ -102,7 +102,7 @@ export class WindowManager {
         preload: path.join(__dirname, 'preload.cjs'),
         contextIsolation: true,
         nodeIntegration: false,
-        backgroundThrottling: false,
+        backgroundThrottling: true,
       },
     });
 
@@ -114,6 +114,10 @@ export class WindowManager {
 
     this.petWindow.on('moved', () => this.scheduleSavePetBounds());
     this.petWindow.on('closed', () => {
+      if (this.saveBoundsTimer) {
+        clearTimeout(this.saveBoundsTimer);
+        this.saveBoundsTimer = null;
+      }
       this.petWindow = null;
       this.hasShownPet = false;
     });

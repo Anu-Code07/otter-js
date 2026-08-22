@@ -11,7 +11,7 @@ export class PermissionAttentionSource extends BaseAttentionSource {
   }
 
   protected pollIntervalMs(): number {
-    return 1500;
+    return 3000;
   }
 
   protected async detect(): Promise<AttentionSignal> {

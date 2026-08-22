@@ -33,7 +33,6 @@ function registerIpcHandlers(): void {
 }
 
 function startServices(): void {
-  cursorTracker.start();
   attentionManager.start();
 
   settingsService.onChange(() => {

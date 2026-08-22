@@ -35,6 +35,13 @@ export class AnimationEngine {
     return def.frames[this.frameIndex] ?? def.frames[0];
   }
 
+  shouldAnimate(): boolean {
+    const def = this.definitions[this.currentAnimation];
+    if (def.frames.length <= 1) return false;
+    if (!def.loop && this.frameIndex >= def.frames.length - 1) return false;
+    return true;
+  }
+
   update(deltaMs: number): void {
     const def = this.definitions[this.currentAnimation];
     const frameDuration = 1000 / def.fps;

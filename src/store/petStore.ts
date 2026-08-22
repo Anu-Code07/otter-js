@@ -62,6 +62,21 @@ export interface PetStore {
   resetAlertKey: () => void;
 }
 
+let speechTimer: ReturnType<typeof setTimeout> | null = null;
+let attentionTimer: ReturnType<typeof setTimeout> | null = null;
+
+function signalsEqual(a: AttentionSignal | null, b: AttentionSignal | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.sourceId === b.sourceId &&
+    a.status === b.status &&
+    a.priority === b.priority &&
+    a.message === b.message &&
+    a.title === b.title
+  );
+}
+
 export const usePetStore = create<PetStore>((set, get) => ({
   petState: 'idle',
   currentAnimation: 'idle',
@@ -88,30 +103,61 @@ export const usePetStore = create<PetStore>((set, get) => ({
   setAnimation: (currentAnimation) => set({ currentAnimation }),
   setFrameSrc: (currentFrameSrc) => set({ currentFrameSrc }),
   showSpeech: (message, durationMs = 3000) => {
+    if (speechTimer) {
+      clearTimeout(speechTimer);
+      speechTimer = null;
+    }
     set({ speechMessage: message, speechVisible: true });
-    setTimeout(() => {
+    speechTimer = setTimeout(() => {
+      speechTimer = null;
       const current = get();
       if (current.speechMessage === message) {
         set({ speechVisible: false, speechMessage: null });
       }
     }, durationMs);
   },
-  hideSpeech: () => set({ speechVisible: false, speechMessage: null }),
+  hideSpeech: () => {
+    if (speechTimer) {
+      clearTimeout(speechTimer);
+      speechTimer = null;
+    }
+    set({ speechVisible: false, speechMessage: null });
+  },
   showAttentionPop: (durationMs = 3500) => {
+    if (attentionTimer) {
+      clearTimeout(attentionTimer);
+      attentionTimer = null;
+    }
     set({ attentionPopVisible: true });
-    setTimeout(() => {
+    attentionTimer = setTimeout(() => {
+      attentionTimer = null;
       if (get().attentionPopVisible) {
         set({ attentionPopVisible: false });
       }
     }, durationMs);
   },
-  hideAttentionPop: () => set({ attentionPopVisible: false }),
-  setCursorPosition: (cursorPosition) => set({ cursorPosition }),
+  hideAttentionPop: () => {
+    if (attentionTimer) {
+      clearTimeout(attentionTimer);
+      attentionTimer = null;
+    }
+    set({ attentionPopVisible: false });
+  },
+  setCursorPosition: (cursorPosition) =>
+    set((state) => {
+      if (
+        state.cursorPosition.x === cursorPosition.x &&
+        state.cursorPosition.y === cursorPosition.y
+      ) {
+        return state;
+      }
+      return { cursorPosition };
+    }),
   setCursorDistance: (cursorDistance) => set({ cursorDistance }),
   setAttentionSnapshot: (attentionSnapshot) =>
     set((state) => {
       if (
-        JSON.stringify(state.attentionSnapshot.active) === JSON.stringify(attentionSnapshot.active) &&
+        signalsEqual(state.attentionSnapshot.active, attentionSnapshot.active) &&
         state.attentionSnapshot.topPriority === attentionSnapshot.topPriority
       ) {
         return state;

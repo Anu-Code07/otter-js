@@ -45,17 +45,51 @@ export function usePetController(): {
 
   const engineRef = useRef<AnimationEngine | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const rafRef = useRef<number>(0);
+  const rafActiveRef = useRef(false);
   const lastTimeRef = useRef<number>(0);
   const prevSignalRef = useRef<AttentionSignal | null>(null);
   const [frameSrc, setFrameSrc] = useState('');
 
+  const scheduleTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      pendingTimersRef.current.delete(id);
+      fn();
+    }, ms);
+    pendingTimersRef.current.add(id);
+    return id;
+  }, []);
+
   const petDefinition = getPetDefinition(selectedPetId);
+
+  const scheduleAnimationLoop = useCallback(() => {
+    if (rafActiveRef.current) return;
+    rafActiveRef.current = true;
+    rafRef.current = requestAnimationFrame(function loop(time: number) {
+      const engine = engineRef.current;
+      if (!engine) {
+        rafActiveRef.current = false;
+        return;
+      }
+
+      const delta = lastTimeRef.current ? time - lastTimeRef.current : 0;
+      lastTimeRef.current = time;
+
+      if (engine.shouldAnimate()) {
+        engine.update(delta);
+        rafRef.current = requestAnimationFrame(loop);
+      } else {
+        rafActiveRef.current = false;
+      }
+    });
+  }, []);
 
   const playAnimation = useCallback((animation: PetAnimation, restart = true) => {
     usePetStore.getState().setAnimation(animation);
     engineRef.current?.play(animation, restart);
-  }, []);
+    scheduleAnimationLoop();
+  }, [scheduleAnimationLoop]);
 
   const transitionTo = useCallback((state: PetState) => {
     const store = usePetStore.getState();
@@ -98,13 +132,13 @@ export function usePetController(): {
       void ipc().system.showNotification(title, body);
     }
 
-    setTimeout(() => {
+    scheduleTimeout(() => {
       const current = usePetStore.getState().attentionSnapshot.active;
       if (current && isNeedsUserStatus(current.status)) {
         transitionTo(attentionSignalToPetState(current) ?? 'attention_waiting');
       }
     }, 3000);
-  }, [transitionTo, playAnimation]);
+  }, [transitionTo, playAnimation, scheduleTimeout]);
 
   const processSnapshot = useCallback((snapshot: AttentionSnapshot) => {
     const store = usePetStore.getState();
@@ -136,7 +170,7 @@ export function usePetController(): {
         store.showSpeech('✨', 1500);
         transitionTo('excited');
         store.updateStats({ happiness: Math.min(100, usePetStore.getState().stats.happiness + 5) });
-        setTimeout(() => transitionTo('idle'), 2000);
+        scheduleTimeout(() => transitionTo('idle'), 2000);
       } else {
         const mapped = attentionSignalToPetState(active);
         if (mapped && mapped !== 'alert') {
@@ -157,7 +191,7 @@ export function usePetController(): {
     }
 
     prevSignalRef.current = active;
-  }, [transitionTo, handleAttentionAlert]);
+  }, [transitionTo, handleAttentionAlert, scheduleTimeout]);
 
   useEffect(() => {
     const engine = new AnimationEngine(petDefinition.animations);
@@ -165,28 +199,37 @@ export function usePetController(): {
     engine.setOnFrameChange((src, anim) => {
       setFrameSrc((prev) => (prev === src ? prev : src));
       const store = usePetStore.getState();
-      if (store.currentFrameSrc !== src) {
-        store.setFrameSrc(src);
-      }
       if (store.currentAnimation !== anim) {
         store.setAnimation(anim);
       }
     });
     engine.play('idle');
+    scheduleAnimationLoop();
 
-    const loop = (time: number) => {
-      const delta = lastTimeRef.current ? time - lastTimeRef.current : 0;
-      lastTimeRef.current = time;
-      engine.update(delta);
-      rafRef.current = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      rafActiveRef.current = false;
+      for (const id of pendingTimersRef.current) {
+        clearTimeout(id);
+      }
+      pendingTimersRef.current.clear();
     };
-    rafRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [petDefinition]);
+  }, [petDefinition, scheduleAnimationLoop]);
 
   useEffect(() => {
     void ipc().settings.get().then(usePetStore.getState().setSettings);
     const unsubSettings = ipc().settings.onChange(usePetStore.getState().setSettings);
+    const unsubAttention = ipc().attention.onSnapshotChange(processSnapshot);
+
+    return () => {
+      unsubSettings();
+      unsubAttention();
+    };
+  }, [processSnapshot]);
+
+  useEffect(() => {
+    if (!settings?.followCursor) return;
+
     const unsubCursor = ipc().cursor.onMove((position) => {
       const store = usePetStore.getState();
       const prev = store.cursorPosition;
@@ -195,14 +238,9 @@ export function usePetController(): {
       }
       store.setCursorPosition(position);
     });
-    const unsubAttention = ipc().attention.onSnapshotChange(processSnapshot);
 
-    return () => {
-      unsubSettings();
-      unsubCursor();
-      unsubAttention();
-    };
-  }, [processSnapshot]);
+    return unsubCursor;
+  }, [settings?.followCursor]);
 
   useEffect(() => {
     if (!settings?.followCursor) return;
@@ -264,7 +302,7 @@ export function usePetController(): {
     if (settings.sleepWhenInactive && inactive && petState !== 'sleeping') {
       if (!isBusyPetState(petState)) {
         playAnimation('yawn', true);
-        setTimeout(() => transitionTo('sleeping'), 1500);
+        scheduleTimeout(() => transitionTo('sleeping'), 1500);
       }
       return;
     }
@@ -305,6 +343,7 @@ export function usePetController(): {
     transitionTo,
     playAnimation,
     petDefinition,
+    scheduleTimeout,
   ]);
 
   useEffect(() => {
@@ -327,12 +366,12 @@ export function usePetController(): {
         switch (picked.action) {
           case 'walk':
             transitionTo('walking');
-            setTimeout(() => transitionTo('idle'), 2000);
+            scheduleTimeout(() => transitionTo('idle'), 2000);
             break;
           case 'sleep':
             if (usePetStore.getState().settings?.sleepWhenInactive) {
               playAnimation('yawn');
-              setTimeout(() => transitionTo('sleeping'), 1200);
+              scheduleTimeout(() => transitionTo('sleeping'), 1200);
             }
             break;
           case 'play':

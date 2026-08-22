@@ -30,6 +30,10 @@ export class IntegrationWebhookSource extends BaseAttentionSource {
 
   stop(): void {
     super.stop();
+    if (this.clearTimer) {
+      clearTimeout(this.clearTimer);
+      this.clearTimer = null;
+    }
     this.stopServer();
   }
 

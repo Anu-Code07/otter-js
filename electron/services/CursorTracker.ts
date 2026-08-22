@@ -2,7 +2,7 @@ import { screen } from 'electron';
 import type { CursorPosition } from '../../src/types/system';
 import { logger } from './Logger';
 
-const THROTTLE_MS = 33; // ~30fps
+const POLL_MS = 50;
 
 export class CursorTracker {
   private intervalId: ReturnType<typeof setInterval> | null = null;
@@ -11,36 +11,55 @@ export class CursorTracker {
   private lastPosition: CursorPosition = { x: 0, y: 0 };
 
   start(): void {
-    if (this.intervalId) return;
-    this.intervalId = setInterval(() => this.poll(), THROTTLE_MS);
-    logger.debug('Cursor tracker started');
+    this.ensurePolling();
   }
 
   stop(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
+    this.stopPolling();
     logger.debug('Cursor tracker stopped');
   }
 
   onMove(callback: (position: CursorPosition) => void): () => void {
     this.listeners.add(callback);
     callback(this.lastPosition);
-    return () => this.listeners.delete(callback);
+    this.ensurePolling();
+    return () => {
+      this.listeners.delete(callback);
+      if (this.listeners.size === 0) {
+        this.stopPolling();
+      }
+    };
   }
 
   getPosition(): CursorPosition {
     return { ...this.lastPosition };
   }
 
+  private ensurePolling(): void {
+    if (this.intervalId || this.listeners.size === 0) return;
+    this.intervalId = setInterval(() => this.poll(), POLL_MS);
+    logger.debug('Cursor tracker polling started');
+  }
+
+  private stopPolling(): void {
+    if (!this.intervalId) return;
+    clearInterval(this.intervalId);
+    this.intervalId = null;
+    logger.debug('Cursor tracker polling stopped');
+  }
+
   private poll(): void {
+    if (this.listeners.size === 0) {
+      this.stopPolling();
+      return;
+    }
+
     const point = screen.getCursorScreenPoint();
     const now = Date.now();
     if (
       point.x === this.lastPosition.x &&
       point.y === this.lastPosition.y &&
-      now - this.lastEmit < THROTTLE_MS
+      now - this.lastEmit < POLL_MS
     ) {
       return;
     }
