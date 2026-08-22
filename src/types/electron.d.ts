@@ -27,7 +27,8 @@ export interface PixelPawAPI {
     getBounds: () => Promise<WindowBounds>;
     setBounds: (bounds: Partial<WindowBounds>) => Promise<void>;
     setPetInteractive: (interactive: boolean) => Promise<void>;
-    startDrag: (offsetX: number, offsetY: number) => Promise<void>;
+    startDrag: (screenX: number, screenY: number) => Promise<void>;
+    updateDrag: (screenX: number, screenY: number) => void;
     endDrag: () => Promise<void>;
     revealPet: () => Promise<void>;
     resetPosition: () => Promise<void>;

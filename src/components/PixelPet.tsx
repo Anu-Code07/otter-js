@@ -157,22 +157,13 @@ export function PixelPet(): JSX.Element {
       // Ignore if capture is unavailable.
     }
 
-    const screenX = e.screenX;
-    const screenY = e.screenY;
-
-    void (async () => {
-      const bounds = await ipc().window.getBounds();
-      const offsetX = screenX - bounds.x;
-      const offsetY = screenY - bounds.y;
-
-      dragActiveRef.current = true;
-      const store = usePetStore.getState();
-      store.setDragging(true);
-      store.setAnimation('idle');
-      store.touchInteraction();
-      void ipc().window.setPetInteractive(true);
-      void ipc().window.startDrag(offsetX, offsetY);
-    })();
+    dragActiveRef.current = true;
+    const store = usePetStore.getState();
+    store.setDragging(true);
+    store.setAnimation('idle');
+    store.touchInteraction();
+    void ipc().window.setPetInteractive(true);
+    void ipc().window.startDrag(e.screenX, e.screenY);
   }, [clearClickTimer, closeMenus]);
 
   const handlePetPointerDown = useCallback((e: React.PointerEvent<HTMLImageElement>) => {
@@ -211,16 +202,38 @@ export function PixelPet(): JSX.Element {
   }, [clearClickTimer]);
 
   useEffect(() => {
+    let dragFrame: number | null = null;
+    let pendingDrag: { x: number; y: number } | null = null;
+
+    const flushDrag = () => {
+      dragFrame = null;
+      if (!dragActiveRef.current || !pendingDrag) return;
+      ipc().window.updateDrag(pendingDrag.x, pendingDrag.y);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragActiveRef.current) return;
+      pendingDrag = { x: e.screenX, y: e.screenY };
+      if (dragFrame === null) {
+        dragFrame = requestAnimationFrame(flushDrag);
+      }
+    };
+
     const onPointerUp = () => {
       if (dragActiveRef.current) {
         endDrag();
       }
     };
 
+    window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
 
     return () => {
+      if (dragFrame !== null) {
+        cancelAnimationFrame(dragFrame);
+      }
+      window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
 

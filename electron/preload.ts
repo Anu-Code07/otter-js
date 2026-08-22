@@ -52,8 +52,10 @@ const pixelPaw = {
       ipcRenderer.invoke('window:setBounds', bounds),
     setPetInteractive: (interactive: boolean): Promise<void> =>
       ipcRenderer.invoke('window:setPetInteractive', interactive),
-    startDrag: (offsetX: number, offsetY: number): Promise<void> =>
-      ipcRenderer.invoke('window:startDrag', offsetX, offsetY),
+    startDrag: (screenX: number, screenY: number): Promise<void> =>
+      ipcRenderer.invoke('window:startDrag', screenX, screenY),
+    updateDrag: (screenX: number, screenY: number): void =>
+      ipcRenderer.send('window:updateDrag', screenX, screenY),
     endDrag: (): Promise<void> => ipcRenderer.invoke('window:endDrag'),
     revealPet: (): Promise<void> => ipcRenderer.invoke('window:revealPet'),
     resetPosition: (): Promise<void> => ipcRenderer.invoke('window:resetPosition'),

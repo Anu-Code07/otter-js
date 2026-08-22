@@ -86,11 +86,20 @@ body,
   background: #fffef8;
   cursor: grab;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  opacity: 0.85;
+  opacity: 0;
+  pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.pet-drag-handle:hover {
+.pixel-pet-container:hover .pet-drag-handle,
+.pet-drag-handle.is-dragging,
+.pet-drag-handle:focus-visible {
+  opacity: 0.85;
+  pointer-events: auto;
+}
+
+.pixel-pet-container:hover .pet-drag-handle:hover,
+.pet-drag-handle.is-dragging {
   opacity: 1;
 }
 

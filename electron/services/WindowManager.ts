@@ -1,7 +1,6 @@
 import { BrowserWindow, screen } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { cursorTracker } from './CursorTracker';
 import { logger } from './Logger';
 import { settingsService, effectivePetSize } from './SettingsService';
 import type { WindowBounds } from '../../src/types/system';
@@ -66,7 +65,6 @@ export class WindowManager {
   private petInteractive = true;
   private isDragging = false;
   private dragOffset: { x: number; y: number } | null = null;
-  private dragUnsubscribe: (() => void) | null = null;
   private hasShownPet = false;
   private saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
   private lastSavedBounds: WindowBounds | null = null;
@@ -375,31 +373,33 @@ export class WindowManager {
     this.scheduleSavePetBounds();
   }
 
-  startDrag(offsetX: number, offsetY: number): void {
+  startDrag(screenX: number, screenY: number): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
 
     this.endDrag();
+    const bounds = this.petWindow.getBounds();
     this.isDragging = true;
-    this.dragOffset = { x: offsetX, y: offsetY };
+    this.dragOffset = {
+      x: screenX - bounds.x,
+      y: screenY - bounds.y,
+    };
+  }
 
-    this.dragUnsubscribe = cursorTracker.onMove((position) => {
-      if (!this.petWindow || this.petWindow.isDestroyed() || !this.dragOffset) return;
-      const { width, height } = this.petWindow.getBounds();
-      const next = clampBoundsToWorkArea({
-        x: Math.round(position.x - this.dragOffset.x),
-        y: Math.round(position.y - this.dragOffset.y),
-        width,
-        height,
-      });
-      this.petWindow.setBounds(next);
+  updateDrag(screenX: number, screenY: number): void {
+    if (!this.isDragging || !this.dragOffset || !this.petWindow || this.petWindow.isDestroyed()) {
+      return;
+    }
+    const { width, height } = this.petWindow.getBounds();
+    const next = clampBoundsToWorkArea({
+      x: Math.round(screenX - this.dragOffset.x),
+      y: Math.round(screenY - this.dragOffset.y),
+      width,
+      height,
     });
+    this.petWindow.setBounds(next);
   }
 
   endDrag(): void {
-    if (this.dragUnsubscribe) {
-      this.dragUnsubscribe();
-      this.dragUnsubscribe = null;
-    }
     this.dragOffset = null;
     if (this.isDragging) {
       this.isDragging = false;

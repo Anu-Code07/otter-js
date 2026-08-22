@@ -23,8 +23,12 @@ export function registerWindowIpc(): void {
     windowManager.setBounds(bounds);
   });
 
-  ipcMain.handle('window:startDrag', (_event, offsetX: number, offsetY: number) => {
-    windowManager.startDrag(offsetX, offsetY);
+  ipcMain.handle('window:startDrag', (_event, screenX: number, screenY: number) => {
+    windowManager.startDrag(screenX, screenY);
+  });
+
+  ipcMain.on('window:updateDrag', (_event, screenX: number, screenY: number) => {
+    windowManager.updateDrag(screenX, screenY);
   });
 
   ipcMain.handle('window:endDrag', () => {

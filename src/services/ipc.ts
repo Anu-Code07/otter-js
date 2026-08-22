@@ -57,6 +57,7 @@ export const mockIpc: typeof window.pixelPaw = {
     setBounds: async () => undefined,
     setPetInteractive: async () => undefined,
     startDrag: async () => undefined,
+    updateDrag: () => undefined,
     endDrag: async () => undefined,
     revealPet: async () => undefined,
     resetPosition: async () => undefined,
