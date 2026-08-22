@@ -10,10 +10,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const WINDOW_CHROME = 8;
 
-export type OverlayMode = 'none' | 'avatar' | 'context';
+export type OverlayMode = 'none' | 'avatar' | 'context' | 'alert';
 
 const OVERLAY_HEIGHTS: Record<OverlayMode, number> = {
   none: 0,
+  alert: 96,
   avatar: 108,
   context: 228,
 };

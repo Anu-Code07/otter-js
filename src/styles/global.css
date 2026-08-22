@@ -109,38 +109,42 @@ body,
 
 .speech-bubble {
   position: absolute;
-  bottom: calc(100% - 8px);
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   background: #fffef8;
   border: 2px solid #4a3020;
   border-radius: 12px;
-  padding: 6px 12px;
-  min-width: 80px;
-  max-width: 200px;
+  padding: 6px 10px;
+  min-width: 64px;
+  max-width: min(200px, 92vw);
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  line-height: 1.35;
   color: #4a3020;
   box-shadow: 0 4px 12px rgba(74, 48, 32, 0.2);
   animation: bubble-pop 0.25s ease;
-  z-index: 10;
+  z-index: 12;
+  pointer-events: none;
 }
 
 .speech-bubble-tail {
   position: absolute;
-  bottom: -8px;
+  bottom: -7px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid #4a3020;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid #4a3020;
 }
 
 .speech-bubble p {
   margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .sleep-zzz {
@@ -169,6 +173,101 @@ body,
 @keyframes float-zzz {
   0%, 100% { opacity: 0.6; transform: translateY(0); }
   50% { opacity: 1; transform: translateY(-4px); }
+}
+
+.pixel-pet-container.has-alert {
+  justify-content: flex-start;
+  padding-top: 2px;
+}
+
+.alert-banner {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 25;
+  width: calc(100% - 6px);
+  max-width: 100%;
+  margin: 0 auto 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #fff5f3;
+  border: 2px solid #ff4d3d;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(255, 60, 40, 0.25);
+  animation: alert-banner-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.alert-banner-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 80, 60, 0.55);
+  animation: attention-pulse 1.2s ease-out infinite;
+  pointer-events: none;
+}
+
+.alert-banner-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alert-banner-source {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ff4d3d;
+}
+
+.alert-banner-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4a3020;
+  line-height: 1.25;
+  display: block;
+}
+
+.alert-banner-message {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #5c4030;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.alert-banner-snooze {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #4a3020;
+  background: #fffef8;
+  border: 2px solid #4a3020;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.alert-banner-snooze:hover {
+  background: #f5f0e8;
+}
+
+@keyframes alert-banner-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .attention-pop {

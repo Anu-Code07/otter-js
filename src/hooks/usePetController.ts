@@ -7,7 +7,6 @@ import {
   attentionSignalToPetState,
   cursorReactionLevel,
   distanceBetween,
-  getAlertMessage,
   isBusyPetState,
   pickWeighted,
 } from '../services/petLogic';
@@ -105,6 +104,7 @@ export function usePetController(): {
 
   const handleAttentionAlert = useCallback((signal: AttentionSignal) => {
     const store = usePetStore.getState();
+    if (store.isSnoozed()) return;
     if (!store.settings || !isSourceAlertsEnabled(signal.sourceId, store.settings)) return;
     if (
       isInDoNotDisturb(
@@ -118,13 +118,11 @@ export function usePetController(): {
 
     const key = attentionAlertKey(signal);
     store.markAlerted(key);
-    store.showAttentionPop(4000);
+    if (store.settings.alertMessages) {
+      store.showAlert(signal, 5000);
+    }
     transitionTo('alert');
     playAnimation('alert');
-
-    if (store.settings.alertMessages) {
-      store.showSpeech(getAlertMessage(signal), 4000);
-    }
 
     if (store.settings.desktopNotifications) {
       const title = signal.title ?? 'PixelPaw';
