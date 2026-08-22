@@ -124,7 +124,7 @@ export function PixelPet(): JSX.Element | null {
     void ipc().window.endDrag();
   }, []);
 
-  const handleDragPointerDown = useCallback(async (e: React.PointerEvent<HTMLButtonElement>) => {
+  const handleDragPointerDown = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0) return;
 
     e.preventDefault();
@@ -132,18 +132,28 @@ export function PixelPet(): JSX.Element | null {
     clearClickTimer();
     clickRef.current.active = false;
 
-    const bounds = await ipc().window.getBounds();
-    const offsetX = e.screenX - bounds.x;
-    const offsetY = e.screenY - bounds.y;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore if capture is unavailable.
+    }
 
-    dragActiveRef.current = true;
-    const store = usePetStore.getState();
-    store.setDragging(true);
-    store.setAnimation('idle');
-    store.touchInteraction();
-    void ipc().window.setPetInteractive(true);
-    void ipc().window.startDrag(offsetX, offsetY);
-    e.currentTarget.setPointerCapture(e.pointerId);
+    const screenX = e.screenX;
+    const screenY = e.screenY;
+
+    void (async () => {
+      const bounds = await ipc().window.getBounds();
+      const offsetX = screenX - bounds.x;
+      const offsetY = screenY - bounds.y;
+
+      dragActiveRef.current = true;
+      const store = usePetStore.getState();
+      store.setDragging(true);
+      store.setAnimation('idle');
+      store.touchInteraction();
+      void ipc().window.setPetInteractive(true);
+      void ipc().window.startDrag(offsetX, offsetY);
+    })();
   }, [clearClickTimer]);
 
   const handlePetPointerDown = useCallback((e: React.PointerEvent<HTMLImageElement>) => {
@@ -152,7 +162,11 @@ export function PixelPet(): JSX.Element | null {
 
     e.preventDefault();
     clickRef.current.active = true;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore if capture is unavailable.
+    }
     void ipc().window.setPetInteractive(true);
   }, []);
 
