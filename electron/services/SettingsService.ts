@@ -22,19 +22,26 @@ export class SettingsService {
     const version = store.get('settingsMigrationVersion') ?? 0;
     if (version >= SETTINGS_MIGRATION_VERSION) return;
 
-    store.delete('windowBounds');
-    store.set('petSize', 160);
-    store.set('petOpacity', 1);
-    store.set('petEnabled', true);
-    store.set('alwaysOnTop', true);
-    if (store.get('meetingDetectionEnabled') === undefined) {
-      store.set('meetingDetectionEnabled', true);
+    if (version < 3) {
+      store.delete('windowBounds');
+      store.set('petSize', 160);
+      store.set('petOpacity', 1);
+      store.set('petEnabled', true);
+      store.set('alwaysOnTop', true);
+      logger.info('Settings migrated to v3 — pet reset to centered default');
     }
-    if (store.get('meetingAlerts') === undefined) {
-      store.set('meetingAlerts', false);
+
+    if (version < 4) {
+      if (store.get('meetingDetectionEnabled') === undefined) {
+        store.set('meetingDetectionEnabled', true);
+      }
+      if (store.get('meetingAlerts') === undefined) {
+        store.set('meetingAlerts', false);
+      }
+      logger.info('Settings migrated to v4 — meeting detection defaults applied');
     }
+
     store.set('settingsMigrationVersion', SETTINGS_MIGRATION_VERSION);
-    logger.info('Settings migrated — pet reset to large centered size');
   }
 
   get(): AppSettings {

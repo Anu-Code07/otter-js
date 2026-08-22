@@ -96,10 +96,18 @@ export const usePetStore = create<PetStore>((set, get) => ({
   setCursorPosition: (cursorPosition) => set({ cursorPosition }),
   setCursorDistance: (cursorDistance) => set({ cursorDistance }),
   setAttentionSnapshot: (attentionSnapshot) =>
-    set((state) => ({
-      previousActiveSignal: state.attentionSnapshot.active,
-      attentionSnapshot,
-    })),
+    set((state) => {
+      if (
+        JSON.stringify(state.attentionSnapshot.active) === JSON.stringify(attentionSnapshot.active) &&
+        state.attentionSnapshot.topPriority === attentionSnapshot.topPriority
+      ) {
+        return state;
+      }
+      return {
+        previousActiveSignal: state.attentionSnapshot.active,
+        attentionSnapshot,
+      };
+    }),
   setSettings: (settings) => set({ settings }),
   updateStats: (partial) =>
     set((state) => ({ stats: { ...state.stats, ...partial } })),

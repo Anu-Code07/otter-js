@@ -33,7 +33,16 @@ export function usePetController(): {
   animation: PetAnimation;
   petState: PetState;
 } {
-  const store = usePetStore();
+  const currentAnimation = usePetStore((s) => s.currentAnimation);
+  const petState = usePetStore((s) => s.petState);
+  const cursorPosition = usePetStore((s) => s.cursorPosition);
+  const cursorDistance = usePetStore((s) => s.cursorDistance);
+  const isPaused = usePetStore((s) => s.isPaused);
+  const isDragging = usePetStore((s) => s.isDragging);
+  const lastInteractionAt = usePetStore((s) => s.lastInteractionAt);
+  const settings = usePetStore((s) => s.settings);
+  const selectedPetId = usePetStore((s) => s.settings?.selectedPetId ?? 'otter');
+
   const engineRef = useRef<AnimationEngine | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rafRef = useRef<number>(0);
@@ -41,23 +50,35 @@ export function usePetController(): {
   const prevSignalRef = useRef<AttentionSignal | null>(null);
   const [frameSrc, setFrameSrc] = useState('');
 
-  const petDefinition = getPetDefinition(store.settings?.selectedPetId ?? 'otter');
+  const petDefinition = getPetDefinition(selectedPetId);
 
   const playAnimation = useCallback((animation: PetAnimation, restart = true) => {
-    store.setAnimation(animation);
+    usePetStore.getState().setAnimation(animation);
     engineRef.current?.play(animation, restart);
-  }, [store]);
+  }, []);
 
   const transitionTo = useCallback((state: PetState) => {
-    store.setPetState(state);
-    const facing = usePetStore.getState().facing;
-    playAnimation(animationForState(state, facing));
-  }, [store, playAnimation]);
+    const store = usePetStore.getState();
+    const facing = store.facing;
+    const animation = animationForState(state, facing);
+    if (store.petState !== state) {
+      store.setPetState(state);
+    }
+    if (store.currentAnimation !== animation) {
+      playAnimation(animation);
+    }
+  }, [playAnimation]);
 
   const handleAttentionAlert = useCallback((signal: AttentionSignal) => {
-    const settings = usePetStore.getState().settings;
-    if (!settings || !isSourceAlertsEnabled(signal.sourceId, settings)) return;
-    if (isInDoNotDisturb(settings.doNotDisturbEnabled, settings.doNotDisturbStart, settings.doNotDisturbEnd)) {
+    const store = usePetStore.getState();
+    if (!store.settings || !isSourceAlertsEnabled(signal.sourceId, store.settings)) return;
+    if (
+      isInDoNotDisturb(
+        store.settings.doNotDisturbEnabled,
+        store.settings.doNotDisturbStart,
+        store.settings.doNotDisturbEnd,
+      )
+    ) {
       return;
     }
 
@@ -66,11 +87,11 @@ export function usePetController(): {
     transitionTo('alert');
     playAnimation('alert');
 
-    if (settings.alertMessages) {
+    if (store.settings.alertMessages) {
       store.showSpeech(getAlertMessage(signal), 4000);
     }
 
-    if (settings.desktopNotifications) {
+    if (store.settings.desktopNotifications) {
       const title = signal.title ?? 'PixelPaw';
       const body = signal.message ?? 'Something needs your attention.';
       void ipc().system.showNotification(title, body);
@@ -82,17 +103,15 @@ export function usePetController(): {
         transitionTo(attentionSignalToPetState(current) ?? 'attention_waiting');
       }
     }, 3000);
-  }, [store, transitionTo, playAnimation]);
+  }, [transitionTo, playAnimation]);
 
   const processSnapshot = useCallback((snapshot: AttentionSnapshot) => {
-    const prev = prevSignalRef.current ?? usePetStore.getState().attentionSnapshot.active;
+    const store = usePetStore.getState();
+    const prev = prevSignalRef.current ?? store.attentionSnapshot.active;
     const active = snapshot.active;
     store.setAttentionSnapshot(snapshot);
 
-    if (
-      usePetStore.getState().petState === 'in_meeting' &&
-      (!active || active.sourceId !== 'meeting')
-    ) {
+    if (store.petState === 'in_meeting' && (!active || active.sourceId !== 'meeting')) {
       transitionTo('idle');
     }
 
@@ -125,7 +144,11 @@ export function usePetController(): {
           if (wasWaiting && nowWorking) {
             store.showSpeech('👍', 1500);
           }
-          if (!isNeedsUserStatus(active.status) || mapped === 'claude_waiting' || mapped === 'attention_waiting') {
+          if (
+            !isNeedsUserStatus(active.status) ||
+            mapped === 'claude_waiting' ||
+            mapped === 'attention_waiting'
+          ) {
             transitionTo(mapped);
           }
         }
@@ -133,15 +156,18 @@ export function usePetController(): {
     }
 
     prevSignalRef.current = active;
-  }, [store, transitionTo, handleAttentionAlert]);
+  }, [transitionTo, handleAttentionAlert]);
 
   useEffect(() => {
     const engine = new AnimationEngine(petDefinition.animations);
     engineRef.current = engine;
     engine.setOnFrameChange((src, anim) => {
       setFrameSrc(src);
+      const store = usePetStore.getState();
       store.setFrameSrc(src);
-      store.setAnimation(anim);
+      if (store.currentAnimation !== anim) {
+        store.setAnimation(anim);
+      }
     });
     engine.play('idle');
 
@@ -153,15 +179,16 @@ export function usePetController(): {
     };
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [store, petDefinition]);
+  }, [petDefinition]);
 
   useEffect(() => {
-    void ipc().settings.get().then(store.setSettings);
-    const unsubSettings = ipc().settings.onChange(store.setSettings);
+    void ipc().settings.get().then(usePetStore.getState().setSettings);
+    const unsubSettings = ipc().settings.onChange(usePetStore.getState().setSettings);
     const unsubCursor = ipc().cursor.onMove((position) => {
-      const prev = usePetStore.getState().cursorPosition;
+      const store = usePetStore.getState();
+      const prev = store.cursorPosition;
       if (distanceBetween(prev, position) >= CURSOR_ACTIVITY_THRESHOLD) {
-        usePetStore.getState().touchInteraction();
+        store.touchInteraction();
       }
       store.setCursorPosition(position);
     });
@@ -172,7 +199,7 @@ export function usePetController(): {
       unsubCursor();
       unsubAttention();
     };
-  }, [store, processSnapshot]);
+  }, [processSnapshot]);
 
   useEffect(() => {
     const updateDistance = async () => {
@@ -181,14 +208,14 @@ export function usePetController(): {
         x: bounds.x + PET_CENTER_OFFSET,
         y: bounds.y + PET_CENTER_OFFSET,
       };
-      store.setCursorDistance(distanceBetween(petCenter, store.cursorPosition));
+      const position = usePetStore.getState().cursorPosition;
+      usePetStore.getState().setCursorDistance(distanceBetween(petCenter, position));
     };
     void updateDistance();
-  }, [store.cursorPosition, store]);
+  }, [cursorPosition]);
 
   useEffect(() => {
-    if (store.isPaused || store.isDragging) return;
-    const settings = store.settings;
+    if (isPaused || isDragging) return;
     if (!settings?.followCursor) return;
 
     const intervalId = setInterval(() => {
@@ -212,44 +239,49 @@ export function usePetController(): {
         const newX = bounds.x + (dx / dist) * step;
         const newY = bounds.y + (dy / dist) * step;
         void ipc().window.setBounds({ x: Math.round(newX), y: Math.round(newY) });
+
+        const petCenter = {
+          x: Math.round(newX) + PET_CENTER_OFFSET,
+          y: Math.round(newY) + PET_CENTER_OFFSET,
+        };
+        state.setCursorDistance(distanceBetween(petCenter, state.cursorPosition));
       })();
     }, 50);
 
     return () => clearInterval(intervalId);
-  }, [store.isPaused, store.isDragging, store.settings?.followCursor]);
+  }, [isPaused, isDragging, settings?.followCursor]);
 
   useEffect(() => {
-    if (store.isPaused) return;
-    const settings = store.settings;
+    if (isPaused) return;
     if (!settings) return;
 
-    const inactive = Date.now() - store.lastInteractionAt > settings.inactivityTimeoutMs;
-    if (settings.sleepWhenInactive && inactive && store.petState !== 'sleeping') {
-      if (!isBusyPetState(store.petState)) {
+    const inactive = Date.now() - lastInteractionAt > settings.inactivityTimeoutMs;
+    if (settings.sleepWhenInactive && inactive && petState !== 'sleeping') {
+      if (!isBusyPetState(petState)) {
         playAnimation('yawn', true);
         setTimeout(() => transitionTo('sleeping'), 1500);
       }
       return;
     }
 
-    if (isBusyPetState(store.petState)) return;
+    if (isBusyPetState(petState)) return;
 
-    const level = cursorReactionLevel(store.cursorDistance);
+    const level = cursorReactionLevel(cursorDistance);
     const personality = petDefinition.personality;
 
     if (settings.followCursor && level !== 'far') {
       if (Math.random() < personality.ignoreCursorChance) return;
       if (level === 'interact') {
         if (Math.random() < personality.curiosityChance) {
-          store.showSpeech('oh?', 1500);
+          usePetStore.getState().showSpeech('oh?', 1500);
           playAnimation('curious');
         }
         return;
       }
       if (level === 'approach' && Math.random() < settings.interactionFrequency) {
         void ipc().window.getBounds().then((bounds) => {
-          store.setFacing(
-            store.cursorPosition.x < bounds.x + PET_CENTER_OFFSET ? 'left' : 'right',
+          usePetStore.getState().setFacing(
+            cursorPosition.x < bounds.x + PET_CENTER_OFFSET ? 'left' : 'right',
           );
         });
         transitionTo('following_cursor');
@@ -257,17 +289,28 @@ export function usePetController(): {
       }
       if (level === 'look') playAnimation('curious', true);
     }
-  }, [store.cursorDistance, store.settings, store.isPaused, store.petState, store.isDragging, store, transitionTo, playAnimation, petDefinition]);
+  }, [
+    cursorDistance,
+    settings,
+    isPaused,
+    petState,
+    isDragging,
+    cursorPosition.x,
+    lastInteractionAt,
+    transitionTo,
+    playAnimation,
+    petDefinition,
+  ]);
 
   useEffect(() => {
-    if (store.isPaused || !store.settings?.randomWandering) return;
-    if (isBusyPetState(store.petState)) return;
+    if (isPaused || !settings?.randomWandering) return;
+    if (isBusyPetState(petState)) return;
 
     const scheduleIdle = () => {
       const delay = 3000 + Math.random() * 5000;
       idleTimerRef.current = setTimeout(() => {
-        const { petState, stats } = usePetStore.getState();
-        if (petState !== 'idle' && petState !== 'following_cursor') {
+        const { petState: currentState, stats } = usePetStore.getState();
+        if (currentState !== 'idle' && currentState !== 'following_cursor') {
           scheduleIdle();
           return;
         }
@@ -289,14 +332,14 @@ export function usePetController(): {
             break;
           case 'play':
             playAnimation('excited', true);
-            store.updateStats({ happiness: Math.min(100, stats.happiness + 2) });
+            usePetStore.getState().updateStats({ happiness: Math.min(100, stats.happiness + 2) });
             break;
           case 'sit':
             playAnimation('sit', true);
             break;
           case 'look_left':
           case 'look_right':
-            store.setFacing(picked.action === 'look_left' ? 'left' : 'right');
+            usePetStore.getState().setFacing(picked.action === 'look_left' ? 'left' : 'right');
             playAnimation('look_around', true);
             break;
           default:
@@ -306,13 +349,15 @@ export function usePetController(): {
       }, delay);
     };
     scheduleIdle();
-    return () => { if (idleTimerRef.current) clearTimeout(idleTimerRef.current); };
-  }, [store.isPaused, store.settings, store.petState, store, transitionTo, playAnimation, petDefinition]);
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [isPaused, settings?.randomWandering, petState, transitionTo, playAnimation, petDefinition]);
 
   return {
     frameSrc,
-    animation: store.currentAnimation,
-    petState: store.petState,
+    animation: currentAnimation,
+    petState,
   };
 }
 
