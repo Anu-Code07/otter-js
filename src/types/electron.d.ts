@@ -32,7 +32,7 @@ export interface PixelPawAPI {
     revealPet: () => Promise<void>;
     resetPosition: () => Promise<void>;
     setMenuExpanded: (expanded: boolean) => Promise<void>;
-    setOverlayMode: (mode: 'none' | 'avatar' | 'context' | 'alert') => Promise<void>;
+    setOverlayMode: (mode: 'none' | 'avatar' | 'context') => Promise<void>;
   };
   settings: {
     get: () => Promise<AppSettings>;

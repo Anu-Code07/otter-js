@@ -18,7 +18,7 @@ type ClickSession = {
   clickTimer: ReturnType<typeof setTimeout> | null;
 };
 
-type OverlayMode = 'none' | 'avatar' | 'context' | 'alert';
+type OverlayMode = 'none' | 'avatar' | 'context';
 
 function createClickSession(): ClickSession {
   return { active: false, clickCount: 0, clickTimer: null };
@@ -30,7 +30,6 @@ export function PixelPet(): JSX.Element {
   const speechVisible = usePetStore((s) => s.speechVisible);
   const speechMessage = usePetStore((s) => s.speechMessage);
   const speechKind = usePetStore((s) => s.speechKind);
-  const activeAlert = usePetStore((s) => s.activeAlert);
   const selectedPetId = usePetStore((s) => s.settings?.selectedPetId ?? 'otter');
   const petState = usePetStore((s) => s.petState);
   const isDragging = usePetStore((s) => s.isDragging);
@@ -43,13 +42,10 @@ export function PixelPet(): JSX.Element {
     ? 'context'
     : avatarPickerOpen
       ? 'avatar'
-      : activeAlert
-        ? 'alert'
-        : 'none';
+      : 'none';
   const menuOpen = overlayMode !== 'none';
 
-  const size = settings?.petSize ?? 180;
-  const opacity = settings?.petOpacity ?? 1;
+  const size = settings?.petSize ?? 160;
 
   const closeMenus = useCallback(() => {
     setAvatarPickerOpen(false);
@@ -241,9 +237,6 @@ export function PixelPet(): JSX.Element {
 
   useEffect(() => {
     void ipc().window.setOverlayMode(overlayMode);
-    return () => {
-      void ipc().window.setOverlayMode('none');
-    };
   }, [overlayMode]);
 
   useEffect(() => {
@@ -256,7 +249,7 @@ export function PixelPet(): JSX.Element {
 
   return (
     <div
-      className={`pixel-pet-container${menuOpen ? ' menu-open' : ''}${activeAlert ? ' has-alert' : ''}`}
+      className={`pixel-pet-container${menuOpen ? ' menu-open' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onContextMenu={handleContextMenu}
@@ -267,8 +260,8 @@ export function PixelPet(): JSX.Element {
         onClose={() => setContextMenuOpen(false)}
         onChangePet={openAvatarPicker}
       />
-      <AlertBannerFromStore />
       <div className="pixel-pet-stage">
+        <AlertBannerFromStore />
         {speechVisible && speechMessage && speechKind === 'chat' && (
           <SpeechBubble message={speechMessage} />
         )}
@@ -296,7 +289,6 @@ export function PixelPet(): JSX.Element {
           style={{
             width: size,
             height: size,
-            opacity,
           }}
           onPointerDown={handlePetPointerDown}
           onPointerUp={handlePetPointerUp}

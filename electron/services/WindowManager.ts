@@ -10,11 +10,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const WINDOW_CHROME = 8;
 
-export type OverlayMode = 'none' | 'avatar' | 'context' | 'alert';
+export type OverlayMode = 'none' | 'avatar' | 'context';
 
 const OVERLAY_HEIGHTS: Record<OverlayMode, number> = {
   none: 0,
-  alert: 96,
   avatar: 108,
   context: 228,
 };
@@ -161,10 +160,26 @@ export class WindowManager {
   private showPetOnce(): void {
     if (this.hasShownPet || !this.petWindow || this.petWindow.isDestroyed()) return;
     this.hasShownPet = true;
-    this.overlayMode = 'none';
+    this.normalizePetWindowBounds();
     this.recoverPetWindowPosition();
     this.revealPetWindow();
     logger.info(`Pet window visible at ${JSON.stringify(this.petWindow.getBounds())}`);
+  }
+
+  /** Reset overlay chrome and snap to standard pet window size. */
+  normalizePetWindowBounds(): void {
+    if (!this.petWindow || this.petWindow.isDestroyed()) return;
+    this.overlayMode = 'none';
+    const settings = settingsService.get();
+    const size = petWindowSize(settings.petSize);
+    const bounds = this.petWindow.getBounds();
+    const next = clampBoundsToWorkArea({
+      x: bounds.x,
+      y: bounds.y,
+      width: size,
+      height: size,
+    });
+    this.petWindow.setBounds(next);
   }
 
   /** Center the pet if saved position is off all displays. */
@@ -256,13 +271,12 @@ export class WindowManager {
   revealPetWindow(): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
     const settings = settingsService.get();
-    const opacity = Math.max(0.4, settings.petOpacity);
     this.petWindow.show();
     this.petWindow.focus();
     this.petWindow.moveTop();
     this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
     this.petWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    this.petWindow.setOpacity(opacity);
+    this.petWindow.setOpacity(settings.petOpacity);
     this.petWindow.setBackgroundColor('#00000000');
   }
 
@@ -315,7 +329,14 @@ export class WindowManager {
 
   setOverlayMode(mode: OverlayMode): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
-    if (this.overlayMode === mode) return;
+    if (mode === 'none') {
+      if (this.overlayMode === 'none') {
+        this.normalizePetWindowBounds();
+        return;
+      }
+    } else if (this.overlayMode === mode) {
+      return;
+    }
 
     const bounds = this.petWindow.getBounds();
     const currentExtra = OVERLAY_HEIGHTS[this.overlayMode];
@@ -336,6 +357,9 @@ export class WindowManager {
 
     this.overlayMode = mode;
     this.petWindow.setBounds(next);
+    if (mode === 'none') {
+      this.normalizePetWindowBounds();
+    }
   }
 
   /** @deprecated Use setOverlayMode */
