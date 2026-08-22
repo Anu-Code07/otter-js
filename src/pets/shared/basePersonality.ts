@@ -1,0 +1,41 @@
+import type { PersonalityDefinition } from '../../types/pet';
+
+const basePersonality: Omit<PersonalityDefinition, 'clickMessages' | 'alertMessages'> = {
+  idleBehaviours: [
+    { action: 'blink', weight: 30 },
+    { action: 'look_around', weight: 20 },
+    { action: 'stretch', weight: 10 },
+    { action: 'walk', weight: 15 },
+    { action: 'sit', weight: 15 },
+    { action: 'sleep', weight: 5 },
+    { action: 'play', weight: 5 },
+  ],
+  clickReactions: ['wave', 'excited', 'blink', 'annoyed', 'happy'],
+  curiosityChance: 0.7,
+  ignoreCursorChance: 0.25,
+};
+
+export const catPersonality: PersonalityDefinition = {
+  ...basePersonality,
+  clickMessages: ['meow', 'purr', 'mrow?', 'nya', 'pet me'],
+  alertMessages: ['Meow! Attention!', 'Psst human', 'Something needs you'],
+};
+
+export const dragonPersonality: PersonalityDefinition = {
+  ...basePersonality,
+  clickMessages: ['roar!', 'fwah', 'burn?', 'shiny', 'guard mode'],
+  alertMessages: ['Dragon senses danger!', 'Something needs you', 'Alert the realm!'],
+  clickReactions: ['excited', 'celebrate', 'wave', 'alert', 'happy'],
+};
+
+export const penguinPersonality: PersonalityDefinition = {
+  ...basePersonality,
+  clickMessages: ['honk', 'waddle', 'brr', 'slide!', 'peep'],
+  alertMessages: ['Honk honk!', 'Cold alert', 'Penguin ping'],
+};
+
+export const raccoonPersonality: PersonalityDefinition = {
+  ...basePersonality,
+  clickMessages: ['trash?', 'sneak', 'hey', 'bandit', 'shiny'],
+  alertMessages: ['Raccoon radar!', 'Something shiny', 'Night patrol'],
+};

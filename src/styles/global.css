@@ -118,6 +118,64 @@ body,
   50% { opacity: 1; transform: translateY(-4px); }
 }
 
+.attention-pop {
+  position: absolute;
+  top: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  pointer-events: none;
+  animation: attention-pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.attention-pop-text {
+  display: block;
+  background: #ff4d3d;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 2px solid #4a3020;
+  box-shadow: 0 4px 14px rgba(255, 60, 40, 0.45);
+  white-space: nowrap;
+}
+
+.attention-pop-pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 80, 60, 0.7);
+  animation: attention-pulse 1s ease-out infinite;
+}
+
+@keyframes attention-pop-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.5);
+  }
+  70% {
+    transform: translateX(-50%) translateY(-4px) scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes attention-pulse {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
 .pet-context-menu {
   position: fixed;
   background: #fffef8;

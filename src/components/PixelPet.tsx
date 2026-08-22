@@ -5,6 +5,7 @@ import { ipc } from '../services/ipc';
 import { idleSpritePath } from '../services/assetPaths';
 import { otterDefinition } from '../pets/otter/definition';
 import { SpeechBubble } from './SpeechBubble';
+import { AttentionPop } from './AttentionPop';
 import { PetContextMenu } from './PetContextMenu';
 import type { PetAnimation } from '../types/pet';
 
@@ -15,6 +16,8 @@ export function PixelPet(): JSX.Element | null {
   const settings = usePetStore((s) => s.settings);
   const speechVisible = usePetStore((s) => s.speechVisible);
   const speechMessage = usePetStore((s) => s.speechMessage);
+  const attentionPopVisible = usePetStore((s) => s.attentionPopVisible);
+  const selectedPetId = usePetStore((s) => s.settings?.selectedPetId ?? 'otter');
   const isPaused = usePetStore((s) => s.isPaused);
   const petState = usePetStore((s) => s.petState);
   const dragRef = useRef({
@@ -135,6 +138,7 @@ export function PixelPet(): JSX.Element | null {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
+      {attentionPopVisible && <AttentionPop />}
       {speechVisible && speechMessage && <SpeechBubble message={speechMessage} />}
       {petState === 'sleeping' && (
         <div className="sleep-zzz" aria-hidden>
@@ -145,14 +149,14 @@ export function PixelPet(): JSX.Element | null {
       )}
       <img
         className="pixel-pet"
-        src={frameSrc || idleSpritePath()}
-        alt="PixelPaw otter"
+        src={frameSrc || idleSpritePath(selectedPetId)}
+        alt="PixelPaw pet"
         draggable={false}
         style={{ width: size, height: size, opacity }}
         onPointerDown={handlePointerDown}
         onContextMenu={(e) => e.preventDefault()}
         onError={() => {
-          console.error('Failed to load pet sprite:', frameSrc || idleSpritePath());
+          console.error('Failed to load pet sprite:', frameSrc || idleSpritePath(selectedPetId));
         }}
       />
       <PetContextMenu />

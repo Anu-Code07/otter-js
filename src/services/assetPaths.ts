@@ -7,6 +7,6 @@ export function resolvePetAsset(relativePath: string): string {
   return `${base}assets/${relativePath}`;
 }
 
-export function idleSpritePath(): string {
-  return resolvePetAsset('pets/otter/idle/frame-00.png');
+export function idleSpritePath(petId = 'otter'): string {
+  return resolvePetAsset(`pets/${petId}/idle/frame-00.png`);
 }

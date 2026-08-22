@@ -38,23 +38,25 @@ const FPS: Partial<Record<PetAnimation, number>> = {
   curious: 6,
 };
 
-function buildFramePath(folder: string, index: number): string {
-  return resolvePetAsset(`pets/otter/${folder}/frame-${String(index).padStart(2, '0')}.png`);
+function buildFramePath(petId: string, folder: string, index: number): string {
+  return resolvePetAsset(`pets/${petId}/${folder}/frame-${String(index).padStart(2, '0')}.png`);
 }
 
-function buildFrames(animation: PetAnimation): string[] {
+function buildFrames(petId: string, animation: PetAnimation): string[] {
   const { folder, frameCount } = ANIMATION_FOLDERS[animation];
-  return Array.from({ length: frameCount }, (_, i) => buildFramePath(folder, i));
+  return Array.from({ length: frameCount }, (_, i) => buildFramePath(petId, folder, i));
 }
 
-export function createAnimationFrames(): Record<PetAnimation, { frames: string[]; fps: number; loop: boolean }> {
+export function createAnimationFrames(
+  petId: string,
+): Record<PetAnimation, { frames: string[]; fps: number; loop: boolean }> {
   const animations = Object.keys(ANIMATION_FOLDERS) as PetAnimation[];
   const result = {} as Record<PetAnimation, { frames: string[]; fps: number; loop: boolean }>;
 
   for (const name of animations) {
     const oneShot = ['blink', 'wake_up', 'yawn', 'wave', 'celebrate', 'happy'].includes(name);
     result[name] = {
-      frames: buildFrames(name),
+      frames: buildFrames(petId, name),
       fps: FPS[name] ?? 6,
       loop: !oneShot,
     };

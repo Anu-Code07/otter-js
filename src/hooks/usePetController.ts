@@ -84,6 +84,7 @@ export function usePetController(): {
 
     const key = attentionAlertKey(signal);
     store.markAlerted(key);
+    store.showAttentionPop(4000);
     transitionTo('alert');
     playAnimation('alert');
 

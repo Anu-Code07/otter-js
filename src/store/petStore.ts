@@ -25,6 +25,7 @@ export interface PetStore {
   currentFrameSrc: string;
   speechMessage: string | null;
   speechVisible: boolean;
+  attentionPopVisible: boolean;
   cursorPosition: CursorPosition;
   cursorDistance: number;
   attentionSnapshot: AttentionSnapshot;
@@ -45,6 +46,8 @@ export interface PetStore {
   setFrameSrc: (src: string) => void;
   showSpeech: (message: string, durationMs?: number) => void;
   hideSpeech: () => void;
+  showAttentionPop: (durationMs?: number) => void;
+  hideAttentionPop: () => void;
   setCursorPosition: (position: CursorPosition) => void;
   setCursorDistance: (distance: number) => void;
   setAttentionSnapshot: (snapshot: AttentionSnapshot) => void;
@@ -65,6 +68,7 @@ export const usePetStore = create<PetStore>((set, get) => ({
   currentFrameSrc: '',
   speechMessage: null,
   speechVisible: false,
+  attentionPopVisible: false,
   cursorPosition: { x: 0, y: 0 },
   cursorDistance: Infinity,
   attentionSnapshot: emptySnapshot(),
@@ -93,6 +97,15 @@ export const usePetStore = create<PetStore>((set, get) => ({
     }, durationMs);
   },
   hideSpeech: () => set({ speechVisible: false, speechMessage: null }),
+  showAttentionPop: (durationMs = 3500) => {
+    set({ attentionPopVisible: true });
+    setTimeout(() => {
+      if (get().attentionPopVisible) {
+        set({ attentionPopVisible: false });
+      }
+    }, durationMs);
+  },
+  hideAttentionPop: () => set({ attentionPopVisible: false }),
   setCursorPosition: (cursorPosition) => set({ cursorPosition }),
   setCursorDistance: (cursorDistance) => set({ cursorDistance }),
   setAttentionSnapshot: (attentionSnapshot) =>
