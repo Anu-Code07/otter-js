@@ -9,7 +9,7 @@ const store = new Store<AppSettings>({
   defaults: DEFAULT_SETTINGS,
 });
 
-const SETTINGS_MIGRATION_VERSION = 5;
+const SETTINGS_MIGRATION_VERSION = 6;
 
 type SettingsKey = keyof AppSettings;
 
@@ -44,6 +44,12 @@ export class SettingsService {
     if (version < 5) {
       store.set('followCursor', false);
       logger.info('Settings migrated to v5 — follow cursor disabled by default');
+    }
+
+    if (version < 6) {
+      store.set('petEnabled', true);
+      store.set('randomWandering', false);
+      logger.info('Settings migrated to v6 — pause removed, battery-friendly defaults');
     }
 
     store.set('settingsMigrationVersion', SETTINGS_MIGRATION_VERSION);

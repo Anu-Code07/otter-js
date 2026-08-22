@@ -77,8 +77,6 @@ const pixelPaw = {
   system: {
     openSettings: (): Promise<void> => ipcRenderer.invoke('system:openSettings'),
     quit: (): Promise<void> => ipcRenderer.invoke('system:quit'),
-    setPetEnabled: (enabled: boolean): Promise<void> =>
-      ipcRenderer.invoke('system:setPetEnabled', enabled),
     setAttentionAlerts: (enabled: boolean): Promise<void> =>
       ipcRenderer.invoke('system:setAttentionAlerts', enabled),
     showNotification: (title: string, body: string): Promise<void> =>

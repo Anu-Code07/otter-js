@@ -26,6 +26,7 @@ import type { PetAnimation, PetState } from '../types/pet';
 
 const PET_CENTER_OFFSET = 48;
 const FOLLOW_STEP_PX = 12;
+const FOLLOW_INTERVAL_MS = 100;
 const CURSOR_ACTIVITY_THRESHOLD = 15;
 
 export function usePetController(): {
@@ -37,7 +38,6 @@ export function usePetController(): {
   const petState = usePetStore((s) => s.petState);
   const cursorPosition = usePetStore((s) => s.cursorPosition);
   const cursorDistance = usePetStore((s) => s.cursorDistance);
-  const isPaused = usePetStore((s) => s.isPaused);
   const isDragging = usePetStore((s) => s.isDragging);
   const lastInteractionAt = usePetStore((s) => s.lastInteractionAt);
   const settings = usePetStore((s) => s.settings);
@@ -165,9 +165,8 @@ export function usePetController(): {
       shouldTriggerAttentionAlert(prevForAlert, currentForAlert, usePetStore.getState().lastAlertKey)
     ) {
       handleAttentionAlert(active);
-    } else if (active && !usePetStore.getState().isPaused) {
+    } else if (active) {
       if (isSuccessStatus(active.status)) {
-        store.showSpeech('✨', 1500);
         transitionTo('excited');
         store.updateStats({ happiness: Math.min(100, usePetStore.getState().stats.happiness + 5) });
         scheduleTimeout(() => transitionTo('idle'), 2000);
@@ -258,12 +257,12 @@ export function usePetController(): {
   }, [cursorPosition, settings?.followCursor]);
 
   useEffect(() => {
-    if (isPaused || isDragging) return;
+    if (isDragging) return;
     if (!settings?.followCursor) return;
 
     const intervalId = setInterval(() => {
       const state = usePetStore.getState();
-      if (state.isPaused || state.isDragging || !state.settings?.followCursor) return;
+      if (state.isDragging || !state.settings?.followCursor) return;
       if (isBusyPetState(state.petState)) return;
 
       const level = cursorReactionLevel(state.cursorDistance);
@@ -289,13 +288,12 @@ export function usePetController(): {
         };
         state.setCursorDistance(distanceBetween(petCenter, state.cursorPosition));
       })();
-    }, 50);
+    }, FOLLOW_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [isPaused, isDragging, settings?.followCursor]);
+  }, [isDragging, settings?.followCursor]);
 
   useEffect(() => {
-    if (isPaused) return;
     if (!settings) return;
 
     const inactive = Date.now() - lastInteractionAt > settings.inactivityTimeoutMs;
@@ -335,7 +333,6 @@ export function usePetController(): {
   }, [
     cursorDistance,
     settings,
-    isPaused,
     petState,
     isDragging,
     cursorPosition.x,
@@ -347,7 +344,7 @@ export function usePetController(): {
   ]);
 
   useEffect(() => {
-    if (isPaused || !settings?.randomWandering) return;
+    if (!settings?.randomWandering) return;
     if (isBusyPetState(petState)) return;
 
     const scheduleIdle = () => {
@@ -396,7 +393,7 @@ export function usePetController(): {
     return () => {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
-  }, [isPaused, settings?.randomWandering, petState, transitionTo, playAnimation, petDefinition]);
+  }, [settings?.randomWandering, petState, transitionTo, playAnimation, petDefinition]);
 
   return {
     frameSrc,

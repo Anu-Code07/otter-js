@@ -24,14 +24,13 @@ function createClickSession(): ClickSession {
   return { active: false, clickCount: 0, clickTimer: null };
 }
 
-export function PixelPet(): JSX.Element | null {
+export function PixelPet(): JSX.Element {
   const { frameSrc } = usePetController();
   const settings = usePetStore((s) => s.settings);
   const speechVisible = usePetStore((s) => s.speechVisible);
   const speechMessage = usePetStore((s) => s.speechMessage);
   const attentionPopVisible = usePetStore((s) => s.attentionPopVisible);
   const selectedPetId = usePetStore((s) => s.settings?.selectedPetId ?? 'otter');
-  const isPaused = usePetStore((s) => s.isPaused);
   const petState = usePetStore((s) => s.petState);
   const isDragging = usePetStore((s) => s.isDragging);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
@@ -248,10 +247,6 @@ export function PixelPet(): JSX.Element | null {
     });
   }, [openAvatarPicker]);
 
-  if (isPaused || settings?.petEnabled === false) {
-    return null;
-  }
-
   return (
     <div
       className={`pixel-pet-container${menuOpen ? ' menu-open' : ''}`}
@@ -289,7 +284,11 @@ export function PixelPet(): JSX.Element | null {
           src={frameSrc || idleSpritePath(selectedPetId)}
           alt="PixelPaw pet"
           draggable={false}
-          style={{ width: size, height: size, opacity }}
+          style={{
+            width: size,
+            height: size,
+            opacity,
+          }}
           onPointerDown={handlePetPointerDown}
           onPointerUp={handlePetPointerUp}
           onPointerCancel={handlePetPointerUp}

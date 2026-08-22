@@ -9,7 +9,6 @@ import { logger } from '../services/Logger';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let tray: Tray | null = null;
-let petEnabled = true;
 let attentionAlertsEnabled = true;
 
 export function registerSystemIpc(): void {
@@ -19,20 +18,6 @@ export function registerSystemIpc(): void {
 
   ipcMain.handle('system:quit', () => {
     app.quit();
-  });
-
-  ipcMain.handle('system:setPetEnabled', (_event, enabled: boolean) => {
-    petEnabled = enabled;
-    settingsService.set({ petEnabled: enabled });
-    const petWindow = windowManager.getPetWindow();
-    if (petWindow && !petWindow.isDestroyed()) {
-      if (enabled) {
-        windowManager.revealPetWindow();
-      } else {
-        petWindow.hide();
-      }
-    }
-    updateTrayMenu();
   });
 
   ipcMain.handle('system:setAttentionAlerts', (_event, enabled: boolean) => {
@@ -88,18 +73,6 @@ function broadcastToPet(action: string): void {
 
 function handleTrayAction(action: string): void {
   switch (action) {
-    case 'toggle-pet':
-      petEnabled = !petEnabled;
-      settingsService.set({ petEnabled });
-      {
-        const petWindow = windowManager.getPetWindow();
-        if (petWindow && !petWindow.isDestroyed()) {
-          if (petEnabled) windowManager.revealPetWindow();
-          else petWindow.hide();
-        }
-      }
-      updateTrayMenu();
-      break;
     case 'toggle-alerts':
       attentionAlertsEnabled = !attentionAlertsEnabled;
       settingsService.set({ attentionAlertsEnabled });
@@ -138,20 +111,10 @@ function handleTrayAction(action: string): void {
 function updateTrayMenu(): void {
   if (!tray) return;
   const settings = settingsService.get();
-  petEnabled = settings.petEnabled;
   attentionAlertsEnabled = settings.attentionAlertsEnabled;
 
   const menu = Menu.buildFromTemplate([
     { label: 'PixelPaw', enabled: false },
-    {
-      label: petEnabled ? '● Pet enabled' : '○ Pet paused',
-      click: () => handleTrayAction('toggle-pet'),
-    },
-    { type: 'separator' },
-    {
-      label: petEnabled ? 'Pause Pet' : 'Resume Pet',
-      click: () => handleTrayAction('toggle-pet'),
-    },
     {
       label: settings.followCursor ? '✓ Follow Cursor' : 'Follow Cursor',
       click: () => handleTrayAction('toggle-follow'),

@@ -35,7 +35,6 @@ export interface PetStore {
   petOffsetX: number;
   petOffsetY: number;
   facing: 'left' | 'right';
-  isPaused: boolean;
   isDragging: boolean;
   lastInteractionAt: number;
   lastAlertAt: number;
@@ -55,7 +54,6 @@ export interface PetStore {
   updateStats: (partial: Partial<PetStats>) => void;
   setPetOffset: (x: number, y: number) => void;
   setFacing: (facing: 'left' | 'right') => void;
-  setPaused: (paused: boolean) => void;
   setDragging: (dragging: boolean) => void;
   touchInteraction: () => void;
   markAlerted: (key: string) => void;
@@ -93,7 +91,6 @@ export const usePetStore = create<PetStore>((set, get) => ({
   petOffsetX: 0,
   petOffsetY: 0,
   facing: 'right',
-  isPaused: false,
   isDragging: false,
   lastInteractionAt: Date.now(),
   lastAlertAt: 0,
@@ -172,7 +169,6 @@ export const usePetStore = create<PetStore>((set, get) => ({
     set((state) => ({ stats: { ...state.stats, ...partial } })),
   setPetOffset: (petOffsetX, petOffsetY) => set({ petOffsetX, petOffsetY }),
   setFacing: (facing) => set({ facing }),
-  setPaused: (isPaused) => set({ isPaused }),
   setDragging: (isDragging) => set({ isDragging }),
   touchInteraction: () => set({ lastInteractionAt: Date.now() }),
   markAlerted: (key) => set({ lastAlertAt: Date.now(), lastAlertKey: key }),

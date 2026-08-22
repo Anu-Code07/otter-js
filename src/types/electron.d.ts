@@ -42,7 +42,6 @@ export interface PixelPawAPI {
   system: {
     openSettings: () => Promise<void>;
     quit: () => Promise<void>;
-    setPetEnabled: (enabled: boolean) => Promise<void>;
     setAttentionAlerts: (enabled: boolean) => Promise<void>;
     showNotification: (title: string, body: string) => Promise<void>;
     onPetStateChange: (state: PetState) => Promise<void>;

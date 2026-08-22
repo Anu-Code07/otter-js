@@ -33,7 +33,7 @@ export class BuildAttentionSource extends BaseAttentionSource {
   }
 
   protected pollIntervalMs(): number {
-    return 3000;
+    return 5000;
   }
 
   protected async detect(): Promise<AttentionSignal> {

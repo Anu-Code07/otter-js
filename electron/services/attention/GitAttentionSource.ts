@@ -38,7 +38,7 @@ export class GitAttentionSource extends BaseAttentionSource {
   }
 
   protected pollIntervalMs(): number {
-    return 5000;
+    return 10000;
   }
 
   setWorkingDirectory(cwd: string): void {
