@@ -9,7 +9,7 @@ const store = new Store<AppSettings>({
   defaults: DEFAULT_SETTINGS,
 });
 
-const SETTINGS_MIGRATION_VERSION = 6;
+const SETTINGS_MIGRATION_VERSION = 7;
 
 type SettingsKey = keyof AppSettings;
 
@@ -52,7 +52,35 @@ export class SettingsService {
       logger.info('Settings migrated to v6 — pause removed, battery-friendly defaults');
     }
 
+    if (version < 7) {
+      store.set('petEnabled', true);
+      store.set('petOpacity', 1);
+      store.set('alwaysOnTop', true);
+      store.delete('windowBounds');
+      logger.info('Settings migrated to v7 — pet visibility recovered');
+    }
+
     store.set('settingsMigrationVersion', SETTINGS_MIGRATION_VERSION);
+  }
+
+  /** Fix corrupted visibility settings from older builds (pause, opacity slider, etc.). */
+  recoverVisibilityIfNeeded(): boolean {
+    const opacity = store.get('petOpacity');
+    const enabled = store.get('petEnabled');
+    const alwaysOnTop = store.get('alwaysOnTop');
+    const needsRecovery =
+      enabled === false ||
+      alwaysOnTop === false ||
+      (typeof opacity === 'number' && opacity < 0.2);
+
+    if (!needsRecovery) return false;
+
+    store.set('petEnabled', true);
+    store.set('petOpacity', 1);
+    store.set('alwaysOnTop', true);
+    store.delete('windowBounds');
+    logger.info('Recovered pet visibility settings (was hidden or transparent)');
+    return true;
   }
 
   get(): AppSettings {
