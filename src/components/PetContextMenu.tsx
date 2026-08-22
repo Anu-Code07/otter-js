@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { usePetStore } from '../store/petStore';
 import { ipc } from '../services/ipc';
 
-export function PetContextMenu() {
+interface PetContextMenuProps {
+  onChangePet?: () => void;
+}
+
+export function PetContextMenu({ onChangePet }: PetContextMenuProps) {
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const settings = usePetStore((s) => s.settings);
@@ -66,10 +70,16 @@ export function PetContextMenu() {
       <button type="button" onClick={() => { void ipc().system.openSettings(); setVisible(false); }}>
         Settings
       </button>
-      <button type="button" disabled title="More pets coming soon">
+      <button
+        type="button"
+        onClick={() => {
+          onChangePet?.();
+          setVisible(false);
+        }}
+      >
         Change Pet
       </button>
-      <button type="button" onClick={() => alert('PixelPaw v1.0.0\nA tiny otter for your desktop.')}>
+      <button type="button" onClick={() => alert('PixelPaw v1.0.14\nA tiny desktop companion for developers.')}>
         About
       </button>
       <hr />
