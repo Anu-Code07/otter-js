@@ -27,6 +27,8 @@ const PET_CENTER_OFFSET = 48;
 const FOLLOW_STEP_PX = 12;
 const FOLLOW_INTERVAL_MS = 100;
 const CURSOR_ACTIVITY_THRESHOLD = 15;
+const IDLE_CHATTER_BASE_MS = 20000;
+const IDLE_CHATTER_JITTER_MS = 4000;
 
 export function usePetController(): {
   frameSrc: string;
@@ -44,6 +46,7 @@ export function usePetController(): {
 
   const engineRef = useRef<AnimationEngine | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleChatterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const rafRef = useRef<number>(0);
   const rafActiveRef = useRef(false);
@@ -392,6 +395,43 @@ export function usePetController(): {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
   }, [settings?.randomWandering, petState, transitionTo, playAnimation, petDefinition]);
+
+  useEffect(() => {
+    const scheduleChatter = () => {
+      const delay =
+        IDLE_CHATTER_BASE_MS + Math.random() * IDLE_CHATTER_JITTER_MS * 2 - IDLE_CHATTER_JITTER_MS;
+      idleChatterTimerRef.current = setTimeout(() => {
+        const store = usePetStore.getState();
+        const { petState: state, isDragging, activeAlert, speechVisible, speechKind } = store;
+
+        if (
+          isDragging ||
+          isBusyPetState(state) ||
+          state !== 'idle' ||
+          activeAlert ||
+          (speechVisible && speechKind === 'alert')
+        ) {
+          scheduleChatter();
+          return;
+        }
+
+        const messages = petDefinition.personality.idleMessages;
+        if (!messages.length) {
+          scheduleChatter();
+          return;
+        }
+
+        const message = messages[Math.floor(Math.random() * messages.length)];
+        store.showSpeech(message, 2800);
+        scheduleChatter();
+      }, delay);
+    };
+
+    scheduleChatter();
+    return () => {
+      if (idleChatterTimerRef.current) clearTimeout(idleChatterTimerRef.current);
+    };
+  }, [petDefinition]);
 
   return {
     frameSrc,

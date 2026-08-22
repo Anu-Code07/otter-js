@@ -57,6 +57,7 @@ export interface PersonalityDefinition {
   idleBehaviours: IdleBehaviour[];
   clickReactions: PetAnimation[];
   clickMessages: string[];
+  idleMessages: string[];
   alertMessages: string[];
   curiosityChance: number;
   ignoreCursorChance: number;
