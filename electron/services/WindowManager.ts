@@ -161,8 +161,30 @@ export class WindowManager {
   private showPetOnce(): void {
     if (this.hasShownPet || !this.petWindow || this.petWindow.isDestroyed()) return;
     this.hasShownPet = true;
+    this.overlayMode = 'none';
+    this.recoverPetWindowPosition();
     this.revealPetWindow();
     logger.info(`Pet window visible at ${JSON.stringify(this.petWindow.getBounds())}`);
+  }
+
+  /** Center the pet if saved position is off all displays. */
+  recoverPetWindowPosition(): void {
+    if (!this.petWindow || this.petWindow.isDestroyed()) return;
+    const bounds = this.petWindow.getBounds();
+    const displays = screen.getAllDisplays();
+    const onScreen = displays.some((display) => {
+      const { x, y, width, height } = display.workArea;
+      return (
+        bounds.x + bounds.width > x &&
+        bounds.x < x + width &&
+        bounds.y + bounds.height > y &&
+        bounds.y < y + height
+      );
+    });
+    if (!onScreen) {
+      this.resetPetPosition();
+      logger.info('Pet was off-screen — reset to center');
+    }
   }
 
   private async verifyPetSprite(): Promise<void> {
@@ -234,12 +256,13 @@ export class WindowManager {
   revealPetWindow(): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
     const settings = settingsService.get();
+    const opacity = Math.max(0.4, settings.petOpacity);
     this.petWindow.show();
     this.petWindow.focus();
     this.petWindow.moveTop();
     this.petWindow.setAlwaysOnTop(settings.alwaysOnTop, 'screen-saver', 1);
     this.petWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    this.petWindow.setOpacity(settings.petOpacity);
+    this.petWindow.setOpacity(opacity);
     this.petWindow.setBackgroundColor('#00000000');
   }
 

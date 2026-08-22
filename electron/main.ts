@@ -48,8 +48,12 @@ app.whenReady().then(() => {
   }
   registerIpcHandlers();
   settingsService.migrateIfNeeded();
+  const recovered = settingsService.recoverVisibilityIfNeeded();
   startServices();
   windowManager.createPetWindow();
+  if (recovered || process.env.PIXELPAW_RESET_POSITION === '1') {
+    windowManager.resetPetPosition();
+  }
   createTray();
 
   app.on('activate', () => {
