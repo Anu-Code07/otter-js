@@ -163,9 +163,11 @@ export function usePetController(): {
     const engine = new AnimationEngine(petDefinition.animations);
     engineRef.current = engine;
     engine.setOnFrameChange((src, anim) => {
-      setFrameSrc(src);
+      setFrameSrc((prev) => (prev === src ? prev : src));
       const store = usePetStore.getState();
-      store.setFrameSrc(src);
+      if (store.currentFrameSrc !== src) {
+        store.setFrameSrc(src);
+      }
       if (store.currentAnimation !== anim) {
         store.setAnimation(anim);
       }
@@ -203,6 +205,8 @@ export function usePetController(): {
   }, [processSnapshot]);
 
   useEffect(() => {
+    if (!settings?.followCursor) return;
+
     const updateDistance = async () => {
       const bounds = await ipc().window.getBounds();
       const petCenter = {
@@ -213,7 +217,7 @@ export function usePetController(): {
       usePetStore.getState().setCursorDistance(distanceBetween(petCenter, position));
     };
     void updateDistance();
-  }, [cursorPosition]);
+  }, [cursorPosition, settings?.followCursor]);
 
   useEffect(() => {
     if (isPaused || isDragging) return;

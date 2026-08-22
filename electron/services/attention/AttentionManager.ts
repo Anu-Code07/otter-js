@@ -16,6 +16,9 @@ import { integrationWebhookSource } from './IntegrationWebhookSource';
 import { BaseAttentionSource } from './BaseAttentionSource';
 
 export class AttentionManager {
+  private lastWebhookPort = settingsService.get().integrationWebhookPort;
+  private lastWebhookEnabled = settingsService.get().integrationWebhookEnabled;
+
   private sources: Record<AttentionSourceId, BaseAttentionSource> = {
     claude: claudeAttentionSource,
     permission: permissionAttentionSource,
@@ -68,7 +71,15 @@ export class AttentionManager {
     this.sources.meeting.setEnabled(s.meetingDetectionEnabled);
     this.sources.integration.setEnabled(s.integrationWebhookEnabled);
     gitAttentionSource.setWorkingDirectory(resolveGitWorkingDirectory(s));
-    integrationWebhookSource.restartServer();
+
+    const webhookChanged =
+      s.integrationWebhookPort !== this.lastWebhookPort ||
+      s.integrationWebhookEnabled !== this.lastWebhookEnabled;
+    if (webhookChanged) {
+      this.lastWebhookPort = s.integrationWebhookPort;
+      this.lastWebhookEnabled = s.integrationWebhookEnabled;
+      integrationWebhookSource.restartServer();
+    }
   }
 
   getSnapshot(): AttentionSnapshot {

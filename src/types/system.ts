@@ -55,7 +55,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   petOpacity: 1,
   alwaysOnTop: true,
   rememberPosition: true,
-  followCursor: true,
+  followCursor: false,
   randomWandering: true,
   sleepWhenInactive: true,
   interactionFrequency: 0.5,
@@ -88,7 +88,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   selectedPetId: 'otter',
   inactivityTimeoutMs: 120_000,
   notificationCooldownMs: 60_000,
-  settingsMigrationVersion: 4,
+  settingsMigrationVersion: 5,
 };
 
 export interface WindowBounds {

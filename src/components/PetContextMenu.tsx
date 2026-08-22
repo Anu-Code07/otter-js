@@ -79,7 +79,7 @@ export function PetContextMenu({ onChangePet }: PetContextMenuProps) {
       >
         Change Pet
       </button>
-      <button type="button" onClick={() => alert('PixelPaw v1.0.14\nA tiny desktop companion for developers.')}>
+      <button type="button" onClick={() => alert('PixelPaw v1.0.15\nA tiny desktop companion for developers.')}>
         About
       </button>
       <hr />

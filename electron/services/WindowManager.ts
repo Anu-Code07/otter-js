@@ -60,6 +60,8 @@ export class WindowManager {
   private dragOffset: { x: number; y: number } | null = null;
   private dragUnsubscribe: (() => void) | null = null;
   private hasShownPet = false;
+  private saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastSavedBounds: WindowBounds | null = null;
 
   createPetWindow(): BrowserWindow {
     if (this.petWindow && !this.petWindow.isDestroyed()) {
@@ -110,7 +112,7 @@ export class WindowManager {
     this.petWindow.setOpacity(settings.petOpacity);
     this.applyMouseTransparency();
 
-    this.petWindow.on('moved', () => this.savePetBounds());
+    this.petWindow.on('moved', () => this.scheduleSavePetBounds());
     this.petWindow.on('closed', () => {
       this.petWindow = null;
       this.hasShownPet = false;
@@ -279,7 +281,7 @@ export class WindowManager {
     const current = this.petWindow.getBounds();
     const next = clampBoundsToWorkArea({ ...current, ...partial });
     this.petWindow.setBounds(next);
-    this.savePetBounds();
+    this.scheduleSavePetBounds();
   }
 
   startDrag(offsetX: number, offsetY: number): void {
@@ -292,12 +294,13 @@ export class WindowManager {
     this.dragUnsubscribe = cursorTracker.onMove((position) => {
       if (!this.petWindow || this.petWindow.isDestroyed() || !this.dragOffset) return;
       const { width, height } = this.petWindow.getBounds();
-      this.petWindow.setBounds({
+      const next = clampBoundsToWorkArea({
         x: Math.round(position.x - this.dragOffset.x),
         y: Math.round(position.y - this.dragOffset.y),
         width,
         height,
       });
+      this.petWindow.setBounds(next);
     });
   }
 
@@ -313,11 +316,29 @@ export class WindowManager {
     }
   }
 
+  private scheduleSavePetBounds(): void {
+    if (this.saveBoundsTimer) return;
+    this.saveBoundsTimer = setTimeout(() => {
+      this.saveBoundsTimer = null;
+      this.savePetBounds();
+    }, 800);
+  }
+
   private savePetBounds(): void {
     if (this.isDragging) return;
     const settings = settingsService.get();
     if (!settings.rememberPosition || !this.petWindow) return;
     const bounds = this.petWindow.getBounds();
+    if (
+      this.lastSavedBounds &&
+      this.lastSavedBounds.x === bounds.x &&
+      this.lastSavedBounds.y === bounds.y &&
+      this.lastSavedBounds.width === bounds.width &&
+      this.lastSavedBounds.height === bounds.height
+    ) {
+      return;
+    }
+    this.lastSavedBounds = { ...bounds };
     settingsService.set({
       windowBounds: bounds,
     } as Partial<AppSettingsWithBounds>);

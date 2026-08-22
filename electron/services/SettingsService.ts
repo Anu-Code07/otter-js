@@ -9,7 +9,7 @@ const store = new Store<AppSettings>({
   defaults: DEFAULT_SETTINGS,
 });
 
-const SETTINGS_MIGRATION_VERSION = 4;
+const SETTINGS_MIGRATION_VERSION = 5;
 
 type SettingsKey = keyof AppSettings;
 
@@ -39,6 +39,11 @@ export class SettingsService {
         store.set('meetingAlerts', false);
       }
       logger.info('Settings migrated to v4 — meeting detection defaults applied');
+    }
+
+    if (version < 5) {
+      store.set('followCursor', false);
+      logger.info('Settings migrated to v5 — follow cursor disabled by default');
     }
 
     store.set('settingsMigrationVersion', SETTINGS_MIGRATION_VERSION);
