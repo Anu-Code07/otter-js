@@ -61,6 +61,7 @@ export const mockIpc: typeof window.pixelPaw = {
     revealPet: async () => undefined,
     resetPosition: async () => undefined,
     setMenuExpanded: async () => undefined,
+    setOverlayMode: async () => undefined,
   },
   settings: {
     get: async () => (await import('../types/system')).DEFAULT_SETTINGS,

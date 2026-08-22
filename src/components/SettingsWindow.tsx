@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ipc } from '../services/ipc';
 import { getAvailablePets, isPetAvailable } from '../pets/registry';
+import { idleSpritePath } from '../services/assetPaths';
+import { APP_VERSION } from '../constants/app';
 import type { AppSettings } from '../types/system';
 import type { AttentionSourceId, AttentionSignal } from '../types/attention';
 import { ATTENTION_SOURCE_LABELS } from '../types/attention';
@@ -24,6 +26,33 @@ const SOURCE_TOGGLES: Array<{
   { id: 'integration', detectionKey: 'integrationWebhookEnabled', alertKey: 'integrationAlerts' },
 ];
 
+function useDebouncedSetting<K extends keyof AppSettings>(
+  settings: AppSettings | null,
+  key: K,
+  update: (partial: Partial<AppSettings>) => Promise<void>,
+  delayMs = 200,
+): { value: AppSettings[K] | undefined; setValue: (value: AppSettings[K]) => void } {
+  const [local, setLocal] = useState<AppSettings[K] | undefined>(settings?.[key]);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setLocal(settings?.[key]);
+  }, [settings, key]);
+
+  const setValue = useCallback(
+    (value: AppSettings[K]) => {
+      setLocal(value);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        void update({ [key]: value } as Partial<AppSettings>);
+      }, delayMs);
+    },
+    [key, update, delayMs],
+  );
+
+  return { value: local, setValue };
+}
+
 export function SettingsWindow({ onClose }: SettingsWindowProps) {
   const [settings, setSettings] = useState<AppSettings | null>(null);
 
@@ -36,6 +65,9 @@ export function SettingsWindow({ onClose }: SettingsWindowProps) {
     const next = await ipc().settings.set(partial);
     setSettings(next);
   }, []);
+
+  const { value: petSize, setValue: setPetSize } = useDebouncedSetting(settings, 'petSize', update);
+  const { value: petOpacity, setValue: setPetOpacity } = useDebouncedSetting(settings, 'petOpacity', update);
 
   const simulate = useCallback(async (sourceId: AttentionSourceId, signal: Partial<AttentionSignal> | null) => {
     await ipc().attention.simulate(sourceId, signal);
@@ -59,6 +91,7 @@ export function SettingsWindow({ onClose }: SettingsWindowProps) {
     <div className="settings-window">
       <header className="settings-header">
         <h1>PixelPaw Settings</h1>
+        <span className="settings-version">v{APP_VERSION}</span>
         {onClose && (
           <button type="button" className="close-btn" onClick={onClose}>×</button>
         )}
@@ -66,32 +99,158 @@ export function SettingsWindow({ onClose }: SettingsWindowProps) {
 
       <section>
         <h2>General</h2>
-        <label><input type="checkbox" checked={settings.launchAtStartup} onChange={(e) => void update({ launchAtStartup: e.target.checked })} /> Launch at startup</label>
-        <label>Pet size: {settings.petSize}px<input type="range" min={64} max={200} value={settings.petSize} onChange={(e) => void update({ petSize: Number(e.target.value) })} /></label>
-        <label>Opacity: {Math.round(settings.petOpacity * 100)}%<input type="range" min={0.3} max={1} step={0.05} value={settings.petOpacity} onChange={(e) => void update({ petOpacity: Number(e.target.value) })} /></label>
-        <label><input type="checkbox" checked={settings.alwaysOnTop} onChange={(e) => void update({ alwaysOnTop: e.target.checked })} /> Always on top</label>
-        <label><input type="checkbox" checked={settings.rememberPosition} onChange={(e) => void update({ rememberPosition: e.target.checked })} /> Remember position</label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.launchAtStartup}
+            onChange={(e) => void update({ launchAtStartup: e.target.checked })}
+          />
+          Launch at startup
+        </label>
+        <label>
+          Pet size: {petSize ?? settings.petSize}px
+          <input
+            type="range"
+            min={64}
+            max={200}
+            value={petSize ?? settings.petSize}
+            onChange={(e) => setPetSize(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          Opacity: {Math.round((petOpacity ?? settings.petOpacity) * 100)}%
+          <input
+            type="range"
+            min={0.3}
+            max={1}
+            step={0.05}
+            value={petOpacity ?? settings.petOpacity}
+            onChange={(e) => setPetOpacity(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.alwaysOnTop}
+            onChange={(e) => void update({ alwaysOnTop: e.target.checked })}
+          />
+          Always on top
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.rememberPosition}
+            onChange={(e) => void update({ rememberPosition: e.target.checked })}
+          />
+          Remember position
+        </label>
+        <button type="button" className="settings-action-btn" onClick={() => void ipc().window.resetPosition()}>
+          Reset pet position
+        </button>
       </section>
 
       <section>
-        <h2>Behaviour</h2>
-        <label><input type="checkbox" checked={settings.followCursor} onChange={(e) => void update({ followCursor: e.target.checked })} /> Follow cursor</label>
-        <label><input type="checkbox" checked={settings.randomWandering} onChange={(e) => void update({ randomWandering: e.target.checked })} /> Random wandering</label>
-        <label><input type="checkbox" checked={settings.sleepWhenInactive} onChange={(e) => void update({ sleepWhenInactive: e.target.checked })} /> Sleep when inactive</label>
-        <label>Interaction frequency: {Math.round(settings.interactionFrequency * 100)}%<input type="range" min={0} max={1} step={0.05} value={settings.interactionFrequency} onChange={(e) => void update({ interactionFrequency: Number(e.target.value) })} /></label>
+        <h2>Interaction</h2>
+        <p className="settings-hint">
+          Drag the <strong>⠿</strong> handle to move · click pet to play · triple-click to change pet · right-click for menu
+        </p>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.followCursor}
+            onChange={(e) => void update({ followCursor: e.target.checked })}
+          />
+          Follow cursor (uses more CPU)
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.randomWandering}
+            onChange={(e) => void update({ randomWandering: e.target.checked })}
+          />
+          Random wandering
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.sleepWhenInactive}
+            onChange={(e) => void update({ sleepWhenInactive: e.target.checked })}
+          />
+          Sleep when inactive
+        </label>
+        <label>
+          Interaction frequency: {Math.round(settings.interactionFrequency * 100)}%
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={settings.interactionFrequency}
+            onChange={(e) => void update({ interactionFrequency: Number(e.target.value) })}
+          />
+        </label>
       </section>
 
       <section>
         <h2>Attention Alerts</h2>
-        <label><input type="checkbox" checked={settings.attentionAlertsEnabled} onChange={(e) => void update({ attentionAlertsEnabled: e.target.checked })} /> Master attention alerts</label>
-        <label><input type="checkbox" checked={settings.desktopNotifications} onChange={(e) => void update({ desktopNotifications: e.target.checked })} /> Desktop notifications</label>
-        <label><input type="checkbox" checked={settings.notificationSound} onChange={(e) => void update({ notificationSound: e.target.checked })} /> Notification sound</label>
-        <label><input type="checkbox" checked={settings.alertMessages} onChange={(e) => void update({ alertMessages: e.target.checked })} /> Speech bubble messages</label>
-        <label><input type="checkbox" checked={settings.doNotDisturbEnabled} onChange={(e) => void update({ doNotDisturbEnabled: e.target.checked })} /> Do not disturb</label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.attentionAlertsEnabled}
+            onChange={(e) => void update({ attentionAlertsEnabled: e.target.checked })}
+          />
+          Master attention alerts
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.desktopNotifications}
+            onChange={(e) => void update({ desktopNotifications: e.target.checked })}
+          />
+          Desktop notifications
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.notificationSound}
+            onChange={(e) => void update({ notificationSound: e.target.checked })}
+          />
+          Notification sound
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.alertMessages}
+            onChange={(e) => void update({ alertMessages: e.target.checked })}
+          />
+          Speech bubble messages
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.doNotDisturbEnabled}
+            onChange={(e) => void update({ doNotDisturbEnabled: e.target.checked })}
+          />
+          Do not disturb
+        </label>
         {settings.doNotDisturbEnabled && (
           <div className="dnd-row">
-            <label>From <input type="time" value={settings.doNotDisturbStart} onChange={(e) => void update({ doNotDisturbStart: e.target.value })} /></label>
-            <label>To <input type="time" value={settings.doNotDisturbEnd} onChange={(e) => void update({ doNotDisturbEnd: e.target.value })} /></label>
+            <label>
+              From
+              <input
+                type="time"
+                value={settings.doNotDisturbStart}
+                onChange={(e) => void update({ doNotDisturbStart: e.target.value })}
+              />
+            </label>
+            <label>
+              To
+              <input
+                type="time"
+                value={settings.doNotDisturbEnd}
+                onChange={(e) => void update({ doNotDisturbEnd: e.target.value })}
+              />
+            </label>
           </div>
         )}
       </section>
@@ -101,37 +260,90 @@ export function SettingsWindow({ onClose }: SettingsWindowProps) {
         {SOURCE_TOGGLES.map(({ id, detectionKey, alertKey }) => (
           <div key={id} className="source-toggle-group">
             <strong>{ATTENTION_SOURCE_LABELS[id]}</strong>
-            <label><input type="checkbox" checked={Boolean(settings[detectionKey])} onChange={(e) => void update({ [detectionKey]: e.target.checked })} /> Detect</label>
-            <label><input type="checkbox" checked={Boolean(settings[alertKey])} onChange={(e) => void update({ [alertKey]: e.target.checked })} /> Alert</label>
+            <label>
+              <input
+                type="checkbox"
+                checked={Boolean(settings[detectionKey])}
+                onChange={(e) => void update({ [detectionKey]: e.target.checked })}
+              />
+              Detect
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={Boolean(settings[alertKey])}
+                onChange={(e) => void update({ [alertKey]: e.target.checked })}
+              />
+              Alert
+            </label>
           </div>
         ))}
-        <label>Build watch path<input type="text" placeholder="~/project/build.log" value={settings.buildWatchPath} onChange={(e) => void update({ buildWatchPath: e.target.value })} /></label>
-        <label>Terminal watch path<input type="text" placeholder="~/.pixelpaw/terminal.log" value={settings.terminalWatchPath} onChange={(e) => void update({ terminalWatchPath: e.target.value })} /></label>
-        <label>Webhook port: {settings.integrationWebhookPort}<input type="number" min={1024} max={65535} value={settings.integrationWebhookPort} onChange={(e) => void update({ integrationWebhookPort: Number(e.target.value) })} /></label>
-        <p className="settings-hint">POST to <code>http://127.0.0.1:{settings.integrationWebhookPort}/attention</code></p>
+        <label>
+          Build watch path
+          <input
+            type="text"
+            placeholder="~/project/build.log"
+            value={settings.buildWatchPath}
+            onChange={(e) => void update({ buildWatchPath: e.target.value })}
+          />
+        </label>
+        <label>
+          Terminal watch path
+          <input
+            type="text"
+            placeholder="~/.pixelpaw/terminal.log"
+            value={settings.terminalWatchPath}
+            onChange={(e) => void update({ terminalWatchPath: e.target.value })}
+          />
+        </label>
+        <label>
+          Webhook port: {settings.integrationWebhookPort}
+          <input
+            type="number"
+            min={1024}
+            max={65535}
+            value={settings.integrationWebhookPort}
+            onChange={(e) => void update({ integrationWebhookPort: Number(e.target.value) })}
+          />
+        </label>
+        <p className="settings-hint">
+          POST to <code>http://127.0.0.1:{settings.integrationWebhookPort}/attention</code>
+        </p>
       </section>
 
       <section>
-        <h2>Appearance</h2>
-        <div className="pet-selector">
-          {getAvailablePets().map((pet) => (
-            <button
-              key={pet.id}
-              type="button"
-              className={`pet-option ${settings.selectedPetId === pet.id ? 'selected' : ''}`}
-              disabled={!isPetAvailable(pet.id)}
-              onClick={() => isPetAvailable(pet.id) && void update({ selectedPetId: pet.id })}
-              title={isPetAvailable(pet.id) ? pet.name : 'Coming soon'}
-            >
-              {pet.emoji} {pet.name}
-            </button>
-          ))}
+        <h2>Pet</h2>
+        <div className="settings-pet-grid">
+          {getAvailablePets().map((pet) => {
+            const selected = settings.selectedPetId === pet.id;
+            const available = isPetAvailable(pet.id);
+            return (
+              <button
+                key={pet.id}
+                type="button"
+                className={`settings-pet-option ${selected ? 'selected' : ''}`}
+                disabled={!available}
+                onClick={() => available && void update({ selectedPetId: pet.id })}
+                title={available ? pet.name : 'Coming soon'}
+              >
+                <img src={idleSpritePath(pet.id)} alt="" width={48} height={48} draggable={false} />
+                <span>{pet.emoji} {pet.name}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
       <section>
         <h2>Developer Mode</h2>
-        <label><input type="checkbox" checked={settings.developerMode} onChange={(e) => void update({ developerMode: e.target.checked })} /> Enable developer mode</label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.developerMode}
+            onChange={(e) => void update({ developerMode: e.target.checked })}
+          />
+          Enable developer mode
+        </label>
         {settings.developerMode && (
           <div className="dev-panel">
             <p>Simulate attention sources</p>

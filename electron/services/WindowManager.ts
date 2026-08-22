@@ -9,7 +9,14 @@ import type { WindowBounds } from '../../src/types/system';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const WINDOW_CHROME = 8;
-const MENU_PANEL_HEIGHT = 104;
+
+export type OverlayMode = 'none' | 'avatar' | 'context';
+
+const OVERLAY_HEIGHTS: Record<OverlayMode, number> = {
+  none: 0,
+  avatar: 108,
+  context: 228,
+};
 
 export function petWindowSize(petSize: number): number {
   return effectivePetSize(petSize) + WINDOW_CHROME;
@@ -63,7 +70,7 @@ export class WindowManager {
   private hasShownPet = false;
   private saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
   private lastSavedBounds: WindowBounds | null = null;
-  private menuExpanded = false;
+  private overlayMode: OverlayMode = 'none';
 
   createPetWindow(): BrowserWindow {
     if (this.petWindow && !this.petWindow.isDestroyed()) {
@@ -282,37 +289,34 @@ export class WindowManager {
     return this.petWindow.getBounds();
   }
 
-  setMenuExpanded(expanded: boolean): void {
+  setOverlayMode(mode: OverlayMode): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
-    if (this.menuExpanded === expanded) return;
+    if (this.overlayMode === mode) return;
 
-    const settings = settingsService.get();
-    const petDim = petWindowSize(settings.petSize);
     const bounds = this.petWindow.getBounds();
+    const currentExtra = OVERLAY_HEIGHTS[this.overlayMode];
+    const targetExtra = OVERLAY_HEIGHTS[mode];
+    const deltaExtra = targetExtra - currentExtra;
 
-    if (expanded) {
-      const newHeight = petDim + MENU_PANEL_HEIGHT;
-      const deltaY = newHeight - bounds.height;
-      const next = clampBoundsToWorkArea({
-        x: bounds.x,
-        y: bounds.y - deltaY,
-        width: bounds.width,
-        height: newHeight,
-      });
-      this.menuExpanded = true;
-      this.petWindow.setBounds(next);
-    } else {
-      const newHeight = petDim;
-      const deltaY = bounds.height - newHeight;
-      const next = clampBoundsToWorkArea({
-        x: bounds.x,
-        y: bounds.y + deltaY,
-        width: bounds.width,
-        height: newHeight,
-      });
-      this.menuExpanded = false;
-      this.petWindow.setBounds(next);
+    if (deltaExtra === 0) {
+      this.overlayMode = mode;
+      return;
     }
+
+    const next = clampBoundsToWorkArea({
+      x: bounds.x,
+      y: bounds.y - deltaExtra,
+      width: bounds.width,
+      height: bounds.height + deltaExtra,
+    });
+
+    this.overlayMode = mode;
+    this.petWindow.setBounds(next);
+  }
+
+  /** @deprecated Use setOverlayMode */
+  setMenuExpanded(expanded: boolean): void {
+    this.setOverlayMode(expanded ? 'avatar' : 'none');
   }
 
   setBounds(partial: Partial<WindowBounds>): void {
@@ -364,7 +368,7 @@ export class WindowManager {
   }
 
   private savePetBounds(): void {
-    if (this.isDragging || this.menuExpanded) return;
+    if (this.isDragging || this.overlayMode !== 'none') return;
     const settings = settingsService.get();
     if (!settings.rememberPosition || !this.petWindow) return;
     const bounds = this.petWindow.getBounds();

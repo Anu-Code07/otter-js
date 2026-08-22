@@ -18,6 +18,8 @@ type ClickSession = {
   clickTimer: ReturnType<typeof setTimeout> | null;
 };
 
+type OverlayMode = 'none' | 'avatar' | 'context';
+
 function createClickSession(): ClickSession {
   return { active: false, clickCount: 0, clickTimer: null };
 }
@@ -33,11 +35,25 @@ export function PixelPet(): JSX.Element | null {
   const petState = usePetStore((s) => s.petState);
   const isDragging = usePetStore((s) => s.isDragging);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const clickRef = useRef<ClickSession>(createClickSession());
   const dragActiveRef = useRef(false);
 
+  const overlayMode: OverlayMode = contextMenuOpen ? 'context' : avatarPickerOpen ? 'avatar' : 'none';
+  const menuOpen = overlayMode !== 'none';
+
   const size = settings?.petSize ?? 180;
   const opacity = settings?.petOpacity ?? 1;
+
+  const closeMenus = useCallback(() => {
+    setAvatarPickerOpen(false);
+    setContextMenuOpen(false);
+  }, []);
+
+  const openAvatarPicker = useCallback(() => {
+    setContextMenuOpen(false);
+    setAvatarPickerOpen(true);
+  }, []);
 
   const clearClickTimer = useCallback(() => {
     const session = clickRef.current;
@@ -53,10 +69,10 @@ export function PixelPet(): JSX.Element | null {
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    if (!dragActiveRef.current) {
+    if (!dragActiveRef.current && !menuOpen) {
       void ipc().window.setPetInteractive(false);
     }
-  }, []);
+  }, [menuOpen]);
 
   const runClickReaction = useCallback(() => {
     const store = usePetStore.getState();
@@ -105,9 +121,9 @@ export function PixelPet(): JSX.Element | null {
     } else if (count === 2) {
       runCelebrateReaction();
     } else if (count >= 3) {
-      setAvatarPickerOpen(true);
+      openAvatarPicker();
     }
-  }, [runClickReaction, runCelebrateReaction]);
+  }, [runClickReaction, runCelebrateReaction, openAvatarPicker]);
 
   const scheduleClickResolution = useCallback(() => {
     const session = clickRef.current;
@@ -131,6 +147,7 @@ export function PixelPet(): JSX.Element | null {
     e.stopPropagation();
     clearClickTimer();
     clickRef.current.active = false;
+    closeMenus();
 
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -154,7 +171,7 @@ export function PixelPet(): JSX.Element | null {
       void ipc().window.setPetInteractive(true);
       void ipc().window.startDrag(offsetX, offsetY);
     })();
-  }, [clearClickTimer]);
+  }, [clearClickTimer, closeMenus]);
 
   const handlePetPointerDown = useCallback((e: React.PointerEvent<HTMLImageElement>) => {
     if (e.button !== 0) return;
@@ -182,6 +199,15 @@ export function PixelPet(): JSX.Element | null {
     scheduleClickResolution();
   }, [scheduleClickResolution]);
 
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    clearClickTimer();
+    clickRef.current.active = false;
+    setAvatarPickerOpen(false);
+    setContextMenuOpen(true);
+    void ipc().window.setPetInteractive(true);
+  }, [clearClickTimer]);
+
   useEffect(() => {
     const onPointerUp = () => {
       if (dragActiveRef.current) {
@@ -208,11 +234,19 @@ export function PixelPet(): JSX.Element | null {
   }, [endDrag]);
 
   useEffect(() => {
-    void ipc().window.setMenuExpanded(avatarPickerOpen);
+    void ipc().window.setOverlayMode(overlayMode);
     return () => {
-      void ipc().window.setMenuExpanded(false);
+      void ipc().window.setOverlayMode('none');
     };
-  }, [avatarPickerOpen]);
+  }, [overlayMode]);
+
+  useEffect(() => {
+    return ipc().system.onTrayAction((action) => {
+      if (action === 'change-pet') {
+        openAvatarPicker();
+      }
+    });
+  }, [openAvatarPicker]);
 
   if (isPaused || settings?.petEnabled === false) {
     return null;
@@ -220,45 +254,49 @@ export function PixelPet(): JSX.Element | null {
 
   return (
     <div
-      className={`pixel-pet-container${avatarPickerOpen ? ' menu-open' : ''}`}
+      className={`pixel-pet-container${menuOpen ? ' menu-open' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onContextMenu={handleContextMenu}
     >
       <AvatarPickerMenu visible={avatarPickerOpen} onClose={() => setAvatarPickerOpen(false)} />
-      <div className="pixel-pet-stage">
-      {attentionPopVisible && <AttentionPop />}
-      {speechVisible && speechMessage && <SpeechBubble message={speechMessage} />}
-      {petState === 'sleeping' && (
-        <div className="sleep-zzz" aria-hidden>
-          <span>z</span>
-          <span>z</span>
-          <span>z</span>
-        </div>
-      )}
-      <button
-        type="button"
-        className={`pet-drag-handle${isDragging ? ' is-dragging' : ''}`}
-        aria-label="Drag pet"
-        title="Drag to move"
-        onPointerDown={handleDragPointerDown}
-      >
-        <span className="pet-drag-handle-grip" aria-hidden>⠿</span>
-      </button>
-      <img
-        className="pixel-pet"
-        src={frameSrc || idleSpritePath(selectedPetId)}
-        alt="PixelPaw pet"
-        draggable={false}
-        style={{ width: size, height: size, opacity }}
-        onPointerDown={handlePetPointerDown}
-        onPointerUp={handlePetPointerUp}
-        onPointerCancel={handlePetPointerUp}
-        onContextMenu={(e) => e.preventDefault()}
-        onError={() => {
-          console.error('Failed to load pet sprite:', frameSrc || idleSpritePath(selectedPetId));
-        }}
+      <PetContextMenu
+        visible={contextMenuOpen}
+        onClose={() => setContextMenuOpen(false)}
+        onChangePet={openAvatarPicker}
       />
-      <PetContextMenu onChangePet={() => setAvatarPickerOpen(true)} />
+      <div className="pixel-pet-stage">
+        {attentionPopVisible && <AttentionPop />}
+        {speechVisible && speechMessage && <SpeechBubble message={speechMessage} />}
+        {petState === 'sleeping' && (
+          <div className="sleep-zzz" aria-hidden>
+            <span>z</span>
+            <span>z</span>
+            <span>z</span>
+          </div>
+        )}
+        <button
+          type="button"
+          className={`pet-drag-handle${isDragging ? ' is-dragging' : ''}`}
+          aria-label="Drag pet"
+          title="Drag to move"
+          onPointerDown={handleDragPointerDown}
+        >
+          <span className="pet-drag-handle-grip" aria-hidden>⠿</span>
+        </button>
+        <img
+          className="pixel-pet"
+          src={frameSrc || idleSpritePath(selectedPetId)}
+          alt="PixelPaw pet"
+          draggable={false}
+          style={{ width: size, height: size, opacity }}
+          onPointerDown={handlePetPointerDown}
+          onPointerUp={handlePetPointerUp}
+          onPointerCancel={handlePetPointerUp}
+          onError={() => {
+            console.error('Failed to load pet sprite:', frameSrc || idleSpritePath(selectedPetId));
+          }}
+        />
       </div>
     </div>
   );

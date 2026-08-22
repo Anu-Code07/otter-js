@@ -79,6 +79,13 @@ export function createTray(): Tray {
   return tray;
 }
 
+function broadcastToPet(action: string): void {
+  const petWindow = windowManager.getPetWindow();
+  if (petWindow && !petWindow.isDestroyed()) {
+    petWindow.webContents.send('system:trayBroadcast', action);
+  }
+}
+
 function handleTrayAction(action: string): void {
   switch (action) {
     case 'toggle-pet':
@@ -101,6 +108,15 @@ function handleTrayAction(action: string): void {
     case 'toggle-claude':
       settingsService.set({ claudeAlerts: !settingsService.get().claudeAlerts });
       updateTrayMenu();
+      break;
+    case 'toggle-follow':
+      const follow = !settingsService.get().followCursor;
+      settingsService.set({ followCursor: follow });
+      updateTrayMenu();
+      break;
+    case 'change-pet':
+      windowManager.revealPetWindow();
+      broadcastToPet('change-pet');
       break;
     case 'show-pet':
       windowManager.revealPetWindow();
@@ -133,19 +149,31 @@ function updateTrayMenu(): void {
     },
     { type: 'separator' },
     {
-      label: 'Pause',
+      label: petEnabled ? 'Pause Pet' : 'Resume Pet',
       click: () => handleTrayAction('toggle-pet'),
+    },
+    {
+      label: settings.followCursor ? '✓ Follow Cursor' : 'Follow Cursor',
+      click: () => handleTrayAction('toggle-follow'),
     },
     {
       label: attentionAlertsEnabled ? '✓ Attention Alerts' : 'Attention Alerts',
       click: () => handleTrayAction('toggle-alerts'),
     },
     {
-      label: 'Show otter',
+      label: settings.claudeAlerts ? '✓ Claude Alerts' : 'Claude Alerts',
+      click: () => handleTrayAction('toggle-claude'),
+    },
+    {
+      label: 'Show Pet',
       click: () => handleTrayAction('show-pet'),
     },
     {
-      label: 'Reset position',
+      label: 'Change Pet',
+      click: () => handleTrayAction('change-pet'),
+    },
+    {
+      label: 'Reset Position',
       click: () => handleTrayAction('reset-position'),
     },
     { type: 'separator' },

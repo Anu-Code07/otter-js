@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { windowManager } from '../services/WindowManager';
+import { windowManager, type OverlayMode } from '../services/WindowManager';
 import type { WindowBounds } from '../../src/types/system';
 
 export function registerWindowIpc(): void {
@@ -41,5 +41,9 @@ export function registerWindowIpc(): void {
 
   ipcMain.handle('window:setMenuExpanded', (_event, expanded: boolean) => {
     windowManager.setMenuExpanded(expanded);
+  });
+
+  ipcMain.handle('window:setOverlayMode', (_event, mode: OverlayMode) => {
+    windowManager.setOverlayMode(mode);
   });
 }
