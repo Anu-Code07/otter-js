@@ -9,6 +9,7 @@ import type { WindowBounds } from '../../src/types/system';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const WINDOW_CHROME = 8;
+const MENU_PANEL_HEIGHT = 104;
 
 export function petWindowSize(petSize: number): number {
   return effectivePetSize(petSize) + WINDOW_CHROME;
@@ -62,6 +63,7 @@ export class WindowManager {
   private hasShownPet = false;
   private saveBoundsTimer: ReturnType<typeof setTimeout> | null = null;
   private lastSavedBounds: WindowBounds | null = null;
+  private menuExpanded = false;
 
   createPetWindow(): BrowserWindow {
     if (this.petWindow && !this.petWindow.isDestroyed()) {
@@ -280,6 +282,39 @@ export class WindowManager {
     return this.petWindow.getBounds();
   }
 
+  setMenuExpanded(expanded: boolean): void {
+    if (!this.petWindow || this.petWindow.isDestroyed()) return;
+    if (this.menuExpanded === expanded) return;
+
+    const settings = settingsService.get();
+    const petDim = petWindowSize(settings.petSize);
+    const bounds = this.petWindow.getBounds();
+
+    if (expanded) {
+      const newHeight = petDim + MENU_PANEL_HEIGHT;
+      const deltaY = newHeight - bounds.height;
+      const next = clampBoundsToWorkArea({
+        x: bounds.x,
+        y: bounds.y - deltaY,
+        width: bounds.width,
+        height: newHeight,
+      });
+      this.menuExpanded = true;
+      this.petWindow.setBounds(next);
+    } else {
+      const newHeight = petDim;
+      const deltaY = bounds.height - newHeight;
+      const next = clampBoundsToWorkArea({
+        x: bounds.x,
+        y: bounds.y + deltaY,
+        width: bounds.width,
+        height: newHeight,
+      });
+      this.menuExpanded = false;
+      this.petWindow.setBounds(next);
+    }
+  }
+
   setBounds(partial: Partial<WindowBounds>): void {
     if (!this.petWindow || this.petWindow.isDestroyed()) return;
     const current = this.petWindow.getBounds();
@@ -329,7 +364,7 @@ export class WindowManager {
   }
 
   private savePetBounds(): void {
-    if (this.isDragging) return;
+    if (this.isDragging || this.menuExpanded) return;
     const settings = settingsService.get();
     if (!settings.rememberPosition || !this.petWindow) return;
     const bounds = this.petWindow.getBounds();

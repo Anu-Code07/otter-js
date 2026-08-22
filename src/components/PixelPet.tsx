@@ -193,17 +193,25 @@ export function PixelPet(): JSX.Element | null {
     };
   }, [endDrag]);
 
+  useEffect(() => {
+    void ipc().window.setMenuExpanded(avatarPickerOpen);
+    return () => {
+      void ipc().window.setMenuExpanded(false);
+    };
+  }, [avatarPickerOpen]);
+
   if (isPaused || settings?.petEnabled === false) {
     return null;
   }
 
   return (
     <div
-      className="pixel-pet-container"
+      className={`pixel-pet-container${avatarPickerOpen ? ' menu-open' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       <AvatarPickerMenu visible={avatarPickerOpen} onClose={() => setAvatarPickerOpen(false)} />
+      <div className="pixel-pet-stage">
       {attentionPopVisible && <AttentionPop />}
       {speechVisible && speechMessage && <SpeechBubble message={speechMessage} />}
       {petState === 'sleeping' && (
@@ -237,6 +245,7 @@ export function PixelPet(): JSX.Element | null {
         }}
       />
       <PetContextMenu onChangePet={() => setAvatarPickerOpen(true)} />
+      </div>
     </div>
   );
 }

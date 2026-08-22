@@ -57,6 +57,8 @@ const pixelPaw = {
     endDrag: (): Promise<void> => ipcRenderer.invoke('window:endDrag'),
     revealPet: (): Promise<void> => ipcRenderer.invoke('window:revealPet'),
     resetPosition: (): Promise<void> => ipcRenderer.invoke('window:resetPosition'),
+    setMenuExpanded: (expanded: boolean): Promise<void> =>
+      ipcRenderer.invoke('window:setMenuExpanded', expanded),
   },
   settings: {
     get: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),

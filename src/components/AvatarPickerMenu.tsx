@@ -48,16 +48,16 @@ export function AvatarPickerMenu({ visible, onClose }: AvatarPickerMenuProps) {
               <img
                 src={idleSpritePath(pet.id)}
                 alt=""
-                width={40}
-                height={40}
+                width={36}
+                height={36}
                 draggable={false}
               />
               <span className="avatar-option-label">{pet.emoji}</span>
+              <span className="avatar-option-name">{pet.name}</span>
             </button>
           );
         })}
       </div>
-      <p className="avatar-picker-hint">Triple-click pet to open · drag ⠿ to move</p>
     </div>
   );
 }

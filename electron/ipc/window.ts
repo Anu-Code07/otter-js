@@ -38,4 +38,8 @@ export function registerWindowIpc(): void {
   ipcMain.handle('window:resetPosition', () => {
     windowManager.resetPetPosition();
   });
+
+  ipcMain.handle('window:setMenuExpanded', (_event, expanded: boolean) => {
+    windowManager.setMenuExpanded(expanded);
+  });
 }

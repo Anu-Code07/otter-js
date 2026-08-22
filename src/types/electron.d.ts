@@ -31,6 +31,7 @@ export interface PixelPawAPI {
     endDrag: () => Promise<void>;
     revealPet: () => Promise<void>;
     resetPosition: () => Promise<void>;
+    setMenuExpanded: (expanded: boolean) => Promise<void>;
   };
   settings: {
     get: () => Promise<AppSettings>;

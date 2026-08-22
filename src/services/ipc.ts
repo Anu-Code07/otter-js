@@ -60,6 +60,7 @@ export const mockIpc: typeof window.pixelPaw = {
     endDrag: async () => undefined,
     revealPet: async () => undefined,
     resetPosition: async () => undefined,
+    setMenuExpanded: async () => undefined,
   },
   settings: {
     get: async () => (await import('../types/system')).DEFAULT_SETTINGS,
