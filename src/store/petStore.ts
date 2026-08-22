@@ -4,6 +4,7 @@ import type { CursorPosition } from '../types/system';
 import type { AppSettings } from '../types/system';
 import type { PetAnimation, PetState, PetStats } from '../types/pet';
 import { createIdleSignal } from '../services/attentionLogic';
+import { personalizeMessage } from '../services/moodLogic';
 
 const emptySnapshot = (): AttentionSnapshot => ({
   active: null,
@@ -19,13 +20,17 @@ const emptySnapshot = (): AttentionSnapshot => ({
   },
 });
 
+export type SpeechKind = 'chat' | 'alert';
+
 export interface PetStore {
   petState: PetState;
   currentAnimation: PetAnimation;
   currentFrameSrc: string;
   speechMessage: string | null;
   speechVisible: boolean;
+  speechKind: SpeechKind;
   attentionPopVisible: boolean;
+  activeAlert: AttentionSignal | null;
   cursorPosition: CursorPosition;
   cursorDistance: number;
   attentionSnapshot: AttentionSnapshot;
@@ -39,12 +44,15 @@ export interface PetStore {
   lastInteractionAt: number;
   lastAlertAt: number;
   lastAlertKey: string | null;
+  snoozeUntil: number | null;
 
   setPetState: (state: PetState) => void;
   setAnimation: (animation: PetAnimation) => void;
   setFrameSrc: (src: string) => void;
-  showSpeech: (message: string, durationMs?: number) => void;
+  showSpeech: (message: string, durationMs?: number, kind?: SpeechKind) => void;
   hideSpeech: () => void;
+  showAlert: (signal: AttentionSignal, durationMs?: number) => void;
+  hideAlert: () => void;
   showAttentionPop: (durationMs?: number) => void;
   hideAttentionPop: () => void;
   setCursorPosition: (position: CursorPosition) => void;
@@ -58,10 +66,13 @@ export interface PetStore {
   touchInteraction: () => void;
   markAlerted: (key: string) => void;
   resetAlertKey: () => void;
+  snoozeAlerts: (durationMs: number) => void;
+  isSnoozed: () => boolean;
 }
 
 let speechTimer: ReturnType<typeof setTimeout> | null = null;
 let attentionTimer: ReturnType<typeof setTimeout> | null = null;
+let alertTimer: ReturnType<typeof setTimeout> | null = null;
 
 function signalsEqual(a: AttentionSignal | null, b: AttentionSignal | null): boolean {
   if (a === b) return true;
@@ -81,7 +92,9 @@ export const usePetStore = create<PetStore>((set, get) => ({
   currentFrameSrc: '',
   speechMessage: null,
   speechVisible: false,
+  speechKind: 'chat',
   attentionPopVisible: false,
+  activeAlert: null,
   cursorPosition: { x: 0, y: 0 },
   cursorDistance: Infinity,
   attentionSnapshot: emptySnapshot(),
@@ -95,21 +108,23 @@ export const usePetStore = create<PetStore>((set, get) => ({
   lastInteractionAt: Date.now(),
   lastAlertAt: 0,
   lastAlertKey: null,
+  snoozeUntil: null,
 
   setPetState: (petState) => set({ petState }),
   setAnimation: (currentAnimation) => set({ currentAnimation }),
   setFrameSrc: (currentFrameSrc) => set({ currentFrameSrc }),
-  showSpeech: (message, durationMs = 3000) => {
+  showSpeech: (message, durationMs = 3000, kind = 'chat') => {
     if (speechTimer) {
       clearTimeout(speechTimer);
       speechTimer = null;
     }
-    set({ speechMessage: message, speechVisible: true });
+    const personalized = personalizeMessage(message, get().settings?.petName);
+    set({ speechMessage: personalized, speechVisible: true, speechKind: kind });
     speechTimer = setTimeout(() => {
       speechTimer = null;
       const current = get();
-      if (current.speechMessage === message) {
-        set({ speechVisible: false, speechMessage: null });
+      if (current.speechMessage === personalized) {
+        set({ speechVisible: false, speechMessage: null, speechKind: 'chat' });
       }
     }, durationMs);
   },
@@ -118,7 +133,25 @@ export const usePetStore = create<PetStore>((set, get) => ({
       clearTimeout(speechTimer);
       speechTimer = null;
     }
-    set({ speechVisible: false, speechMessage: null });
+    set({ speechVisible: false, speechMessage: null, speechKind: 'chat' });
+  },
+  showAlert: (signal, durationMs = 5000) => {
+    if (alertTimer) {
+      clearTimeout(alertTimer);
+      alertTimer = null;
+    }
+    set({ activeAlert: signal, attentionPopVisible: true });
+    alertTimer = setTimeout(() => {
+      alertTimer = null;
+      get().hideAlert();
+    }, durationMs);
+  },
+  hideAlert: () => {
+    if (alertTimer) {
+      clearTimeout(alertTimer);
+      alertTimer = null;
+    }
+    set({ activeAlert: null, attentionPopVisible: false });
   },
   showAttentionPop: (durationMs = 3500) => {
     if (attentionTimer) {
@@ -173,4 +206,9 @@ export const usePetStore = create<PetStore>((set, get) => ({
   touchInteraction: () => set({ lastInteractionAt: Date.now() }),
   markAlerted: (key) => set({ lastAlertAt: Date.now(), lastAlertKey: key }),
   resetAlertKey: () => set({ lastAlertKey: null }),
+  snoozeAlerts: (durationMs) => set({ snoozeUntil: Date.now() + durationMs }),
+  isSnoozed: () => {
+    const until = get().snoozeUntil;
+    return until !== null && Date.now() < until;
+  },
 }));

@@ -27,6 +27,8 @@ export interface AttentionSourceSettings {
   doNotDisturbEnd: string;
 }
 
+export type PerformanceMode = 'minimal' | 'normal' | 'playful';
+
 export interface AppSettings extends AttentionSourceSettings {
   launchAtStartup: boolean;
   petSize: number;
@@ -43,6 +45,9 @@ export interface AppSettings extends AttentionSourceSettings {
   developerMode: boolean;
   petEnabled: boolean;
   selectedPetId: string;
+  petName: string;
+  hasCompletedOnboarding: boolean;
+  performanceMode: PerformanceMode;
   inactivityTimeoutMs: number;
   notificationCooldownMs: number;
   windowBounds?: WindowBounds;
@@ -86,9 +91,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   developerMode: false,
   petEnabled: true,
   selectedPetId: 'otter',
+  petName: '',
+  hasCompletedOnboarding: false,
+  performanceMode: 'normal',
   inactivityTimeoutMs: 120_000,
   notificationCooldownMs: 60_000,
-  settingsMigrationVersion: 6,
+  settingsMigrationVersion: 7,
 };
 
 export interface WindowBounds {

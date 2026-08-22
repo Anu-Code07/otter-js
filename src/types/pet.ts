@@ -60,6 +60,12 @@ export interface PersonalityDefinition {
   alertMessages: string[];
   curiosityChance: number;
   ignoreCursorChance: number;
+  /** Multiplier for follow-cursor interaction frequency (default 1) */
+  followCursorBias?: number;
+  /** Preferred celebrate animation */
+  celebrateAnimation?: PetAnimation;
+  /** Weight multiplier for walk idle behaviour (penguin waddle) */
+  walkBias?: number;
 }
 
 export interface PetDefinition {

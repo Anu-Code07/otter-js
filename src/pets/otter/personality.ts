@@ -20,6 +20,8 @@ export const otterPersonality: PersonalityDefinition = {
     'Your AI needs instructions',
     'Claude finished!',
   ],
-  curiosityChance: 0.7,
-  ignoreCursorChance: 0.25,
+  curiosityChance: 0.85,
+  ignoreCursorChance: 0.1,
+  followCursorBias: 1.3,
+  celebrateAnimation: 'celebrate',
 };
