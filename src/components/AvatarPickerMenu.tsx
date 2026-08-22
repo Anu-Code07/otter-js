@@ -25,39 +25,39 @@ export function AvatarPickerMenu({ visible, onClose }: AvatarPickerMenuProps) {
   if (!visible) return null;
 
   return (
-    <div className="avatar-picker-overlay" onClick={onClose}>
-      <div className="avatar-picker" onClick={(e) => e.stopPropagation()}>
-        <div className="avatar-picker-header">Choose your pet</div>
-        <p className="avatar-picker-hint">Triple-click the pet anytime to switch</p>
-        <div className="avatar-picker-grid">
-          {getAvailablePets().map((pet) => {
-            const available = isPetAvailable(pet.id);
-            const selected = selectedPetId === pet.id;
-            return (
-              <button
-                key={pet.id}
-                type="button"
-                className={`avatar-option ${selected ? 'selected' : ''}`}
-                disabled={!available}
-                onClick={() => void selectPet(pet.id)}
-                title={available ? pet.name : 'Coming soon'}
-              >
-                <img
-                  src={idleSpritePath(pet.id)}
-                  alt={pet.name}
-                  width={64}
-                  height={64}
-                  draggable={false}
-                />
-                <span>{pet.emoji} {pet.name}</span>
-              </button>
-            );
-          })}
-        </div>
-        <button type="button" className="avatar-picker-close" onClick={onClose}>
-          Close
+    <div className="avatar-picker-popover" role="dialog" aria-label="Choose your pet">
+      <div className="avatar-picker-header">
+        <span>Choose pet</span>
+        <button type="button" className="avatar-picker-dismiss" onClick={onClose} aria-label="Close">
+          ×
         </button>
       </div>
+      <div className="avatar-picker-grid">
+        {getAvailablePets().map((pet) => {
+          const available = isPetAvailable(pet.id);
+          const selected = selectedPetId === pet.id;
+          return (
+            <button
+              key={pet.id}
+              type="button"
+              className={`avatar-option ${selected ? 'selected' : ''}`}
+              disabled={!available}
+              onClick={() => void selectPet(pet.id)}
+              title={available ? pet.name : 'Coming soon'}
+            >
+              <img
+                src={idleSpritePath(pet.id)}
+                alt=""
+                width={40}
+                height={40}
+                draggable={false}
+              />
+              <span className="avatar-option-label">{pet.emoji}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="avatar-picker-hint">Triple-click pet to open · drag ⠿ to move</p>
     </div>
   );
 }

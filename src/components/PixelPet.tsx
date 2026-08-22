@@ -10,33 +10,16 @@ import { PetContextMenu } from './PetContextMenu';
 import { AvatarPickerMenu } from './AvatarPickerMenu';
 import type { PetAnimation } from '../types/pet';
 
-const DRAG_THRESHOLD_PX = 6;
 const CLICK_WINDOW_MS = 400;
 
-type PointerSession = {
+type ClickSession = {
   active: boolean;
-  dragging: boolean;
-  startX: number;
-  startY: number;
-  offsetX: number;
-  offsetY: number;
-  pointerId: number;
   clickCount: number;
   clickTimer: ReturnType<typeof setTimeout> | null;
 };
 
-function createPointerSession(): PointerSession {
-  return {
-    active: false,
-    dragging: false,
-    startX: 0,
-    startY: 0,
-    offsetX: 0,
-    offsetY: 0,
-    pointerId: -1,
-    clickCount: 0,
-    clickTimer: null,
-  };
+function createClickSession(): ClickSession {
+  return { active: false, clickCount: 0, clickTimer: null };
 }
 
 export function PixelPet(): JSX.Element | null {
@@ -50,13 +33,14 @@ export function PixelPet(): JSX.Element | null {
   const petState = usePetStore((s) => s.petState);
   const isDragging = usePetStore((s) => s.isDragging);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
-  const pointerRef = useRef<PointerSession>(createPointerSession());
+  const clickRef = useRef<ClickSession>(createClickSession());
+  const dragActiveRef = useRef(false);
 
   const size = settings?.petSize ?? 180;
   const opacity = settings?.petOpacity ?? 1;
 
   const clearClickTimer = useCallback(() => {
-    const session = pointerRef.current;
+    const session = clickRef.current;
     if (session.clickTimer) {
       clearTimeout(session.clickTimer);
       session.clickTimer = null;
@@ -69,7 +53,7 @@ export function PixelPet(): JSX.Element | null {
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    if (!pointerRef.current.dragging) {
+    if (!dragActiveRef.current) {
       void ipc().window.setPetInteractive(false);
     }
   }, []);
@@ -111,7 +95,7 @@ export function PixelPet(): JSX.Element | null {
   }, []);
 
   const resolveClicks = useCallback(() => {
-    const session = pointerRef.current;
+    const session = clickRef.current;
     const count = session.clickCount;
     session.clickCount = 0;
     session.clickTimer = null;
@@ -126,100 +110,88 @@ export function PixelPet(): JSX.Element | null {
   }, [runClickReaction, runCelebrateReaction]);
 
   const scheduleClickResolution = useCallback(() => {
-    const session = pointerRef.current;
+    const session = clickRef.current;
     if (session.clickTimer) {
       clearTimeout(session.clickTimer);
     }
     session.clickTimer = setTimeout(resolveClicks, CLICK_WINDOW_MS);
   }, [resolveClicks]);
 
-  const beginDrag = useCallback(() => {
-    const session = pointerRef.current;
-    if (session.dragging || !session.active) return;
-
-    clearClickTimer();
-    session.dragging = true;
-    const store = usePetStore.getState();
-    store.setDragging(true);
-    store.setAnimation('idle');
-    store.touchInteraction();
-    void ipc().window.startDrag(session.offsetX, session.offsetY);
-  }, [clearClickTimer]);
-
   const endDrag = useCallback(() => {
-    const session = pointerRef.current;
-    if (!session.dragging) return;
-
-    session.dragging = false;
+    if (!dragActiveRef.current) return;
+    dragActiveRef.current = false;
     usePetStore.getState().setDragging(false);
     void ipc().window.endDrag();
   }, []);
 
-  const handlePointerMove = useCallback((e: PointerEvent) => {
-    const session = pointerRef.current;
-    if (!session.active || session.dragging) return;
+  const handleDragPointerDown = useCallback(async (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0) return;
 
-    const dx = Math.abs(e.screenX - session.startX);
-    const dy = Math.abs(e.screenY - session.startY);
-    if (dx > DRAG_THRESHOLD_PX || dy > DRAG_THRESHOLD_PX) {
-      beginDrag();
-    }
-  }, [beginDrag]);
+    e.preventDefault();
+    e.stopPropagation();
+    clearClickTimer();
+    clickRef.current.active = false;
 
-  const handlePointerUp = useCallback(() => {
-    const session = pointerRef.current;
-    if (!session.active) return;
+    const bounds = await ipc().window.getBounds();
+    const offsetX = e.screenX - bounds.x;
+    const offsetY = e.screenY - bounds.y;
 
-    session.active = false;
+    dragActiveRef.current = true;
+    const store = usePetStore.getState();
+    store.setDragging(true);
+    store.setAnimation('idle');
+    store.touchInteraction();
+    void ipc().window.setPetInteractive(true);
+    void ipc().window.startDrag(offsetX, offsetY);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }, [clearClickTimer]);
 
-    if (session.dragging) {
-      endDrag();
+  const handlePetPointerDown = useCallback((e: React.PointerEvent<HTMLImageElement>) => {
+    if (e.button !== 0) return;
+    if (dragActiveRef.current) return;
+
+    e.preventDefault();
+    clickRef.current.active = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    void ipc().window.setPetInteractive(true);
+  }, []);
+
+  const handlePetPointerUp = useCallback(() => {
+    const session = clickRef.current;
+    if (!session.active || dragActiveRef.current) {
+      session.active = false;
       return;
     }
 
+    session.active = false;
     session.clickCount += 1;
     scheduleClickResolution();
-  }, [endDrag, scheduleClickResolution]);
+  }, [scheduleClickResolution]);
 
   useEffect(() => {
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerUp);
+    const onPointerUp = () => {
+      if (dragActiveRef.current) {
+        endDrag();
+      }
+    };
+
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
 
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
 
-      const session = pointerRef.current;
+      const session = clickRef.current;
       if (session.clickTimer) {
         clearTimeout(session.clickTimer);
       }
-      if (session.dragging) {
+      if (dragActiveRef.current) {
         void ipc().window.endDrag();
         usePetStore.getState().setDragging(false);
       }
     };
-  }, [handlePointerMove, handlePointerUp]);
-
-  const handlePointerDown = useCallback(async (e: React.PointerEvent<HTMLImageElement>) => {
-    if (e.button !== 0) return;
-
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-
-    const bounds = await ipc().window.getBounds();
-    const session = pointerRef.current;
-    session.active = true;
-    session.dragging = false;
-    session.startX = e.screenX;
-    session.startY = e.screenY;
-    session.offsetX = e.screenX - bounds.x;
-    session.offsetY = e.screenY - bounds.y;
-    session.pointerId = e.pointerId;
-
-    void ipc().window.setPetInteractive(true);
-  }, []);
+  }, [endDrag]);
 
   if (isPaused || settings?.petEnabled === false) {
     return null;
@@ -231,6 +203,7 @@ export function PixelPet(): JSX.Element | null {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
+      <AvatarPickerMenu visible={avatarPickerOpen} onClose={() => setAvatarPickerOpen(false)} />
       {attentionPopVisible && <AttentionPop />}
       {speechVisible && speechMessage && <SpeechBubble message={speechMessage} />}
       {petState === 'sleeping' && (
@@ -240,20 +213,30 @@ export function PixelPet(): JSX.Element | null {
           <span>z</span>
         </div>
       )}
+      <button
+        type="button"
+        className={`pet-drag-handle${isDragging ? ' is-dragging' : ''}`}
+        aria-label="Drag pet"
+        title="Drag to move"
+        onPointerDown={handleDragPointerDown}
+      >
+        <span className="pet-drag-handle-grip" aria-hidden>⠿</span>
+      </button>
       <img
-        className={`pixel-pet${isDragging ? ' is-dragging' : ''}`}
+        className="pixel-pet"
         src={frameSrc || idleSpritePath(selectedPetId)}
         alt="PixelPaw pet"
         draggable={false}
         style={{ width: size, height: size, opacity }}
-        onPointerDown={handlePointerDown}
+        onPointerDown={handlePetPointerDown}
+        onPointerUp={handlePetPointerUp}
+        onPointerCancel={handlePetPointerUp}
         onContextMenu={(e) => e.preventDefault()}
         onError={() => {
           console.error('Failed to load pet sprite:', frameSrc || idleSpritePath(selectedPetId));
         }}
       />
       <PetContextMenu onChangePet={() => setAvatarPickerOpen(true)} />
-      <AvatarPickerMenu visible={avatarPickerOpen} onClose={() => setAvatarPickerOpen(false)} />
     </div>
   );
 }
