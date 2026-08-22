@@ -34,7 +34,7 @@ export class TerminalAttentionSource extends BaseAttentionSource {
   }
 
   protected pollIntervalMs(): number {
-    return 2500;
+    return 5000;
   }
 
   protected async detect(): Promise<AttentionSignal> {

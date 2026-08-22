@@ -71,7 +71,6 @@ export const mockIpc: typeof window.pixelPaw = {
   system: {
     openSettings: async () => undefined,
     quit: async () => undefined,
-    setPetEnabled: async () => undefined,
     setAttentionAlerts: async () => undefined,
     showNotification: async () => undefined,
     onPetStateChange: async () => undefined,

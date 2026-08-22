@@ -2,7 +2,7 @@ import { screen } from 'electron';
 import type { CursorPosition } from '../../src/types/system';
 import { logger } from './Logger';
 
-const POLL_MS = 50;
+const POLL_MS = 100;
 
 export class CursorTracker {
   private intervalId: ReturnType<typeof setInterval> | null = null;

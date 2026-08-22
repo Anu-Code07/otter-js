@@ -2,7 +2,7 @@ import type { ClaudeStatus } from '../../src/types/claude';
 import { logger } from './Logger';
 import { detectClaudeOnPlatform } from '../platform';
 
-const POLL_INTERVAL_MS = 2000;
+const POLL_INTERVAL_MS = 4000;
 
 export class ClaudeDetectorService {
   private intervalId: ReturnType<typeof setInterval> | null = null;

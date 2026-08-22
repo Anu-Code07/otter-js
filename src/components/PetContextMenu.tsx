@@ -11,14 +11,6 @@ interface PetContextMenuProps {
 
 export function PetContextMenu({ visible, onClose, onChangePet }: PetContextMenuProps) {
   const settings = usePetStore((s) => s.settings);
-  const isPaused = usePetStore((s) => s.isPaused);
-
-  const togglePause = useCallback(async () => {
-    const next = !isPaused;
-    usePetStore.getState().setPaused(next);
-    await ipc().system.setPetEnabled(!next);
-    onClose();
-  }, [isPaused, onClose]);
 
   const toggleFollow = useCallback(async () => {
     await ipc().settings.set({ followCursor: !settings?.followCursor });
@@ -56,9 +48,6 @@ export function PetContextMenu({ visible, onClose, onChangePet }: PetContextMenu
           ×
         </button>
       </div>
-      <button type="button" role="menuitem" onClick={() => void togglePause()}>
-        🐾 {isPaused ? 'Resume Pet' : 'Pause Pet'}
-      </button>
       <button type="button" role="menuitem" onClick={() => void toggleFollow()}>
         {settings?.followCursor ? '✓ ' : ''}Follow Cursor
       </button>

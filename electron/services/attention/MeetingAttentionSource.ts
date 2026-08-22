@@ -11,7 +11,7 @@ export class MeetingAttentionSource extends BaseAttentionSource {
   }
 
   protected pollIntervalMs(): number {
-    return 2000;
+    return 5000;
   }
 
   protected async detect(): Promise<AttentionSignal> {
