@@ -47,6 +47,8 @@ export function usePetController(): {
   const engineRef = useRef<AnimationEngine | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idleChatterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sleepTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevPetStateRef = useRef<PetState>(petState);
   const pendingTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const rafRef = useRef<number>(0);
   const rafActiveRef = useRef(false);
@@ -220,6 +222,14 @@ export function usePetController(): {
   }, [petDefinition, scheduleAnimationLoop]);
 
   useEffect(() => {
+    if (prevPetStateRef.current === 'sleeping' && petState === 'idle') {
+      playAnimation('wake_up', true);
+      scheduleTimeout(() => transitionTo('idle'), 1200);
+    }
+    prevPetStateRef.current = petState;
+  }, [petState, playAnimation, transitionTo, scheduleTimeout]);
+
+  useEffect(() => {
     void ipc().settings.get().then(usePetStore.getState().setSettings);
     const unsubSettings = ipc().settings.onChange(usePetStore.getState().setSettings);
     const unsubAttention = ipc().attention.onSnapshotChange(processSnapshot);
@@ -301,10 +311,20 @@ export function usePetController(): {
     if (!settings) return;
 
     const inactive = Date.now() - lastInteractionAt > settings.inactivityTimeoutMs;
+
+    if (!inactive && sleepTimeoutRef.current) {
+      clearTimeout(sleepTimeoutRef.current);
+      sleepTimeoutRef.current = null;
+    }
+
     if (settings.sleepWhenInactive && inactive && petState !== 'sleeping') {
       if (!isBusyPetState(petState)) {
         playAnimation('yawn', true);
-        scheduleTimeout(() => transitionTo('sleeping'), 1500);
+        if (sleepTimeoutRef.current) clearTimeout(sleepTimeoutRef.current);
+        sleepTimeoutRef.current = setTimeout(() => {
+          sleepTimeoutRef.current = null;
+          transitionTo('sleeping');
+        }, 1500);
       }
       return;
     }

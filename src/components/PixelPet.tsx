@@ -162,6 +162,7 @@ export function PixelPet(): JSX.Element {
 
     dragActiveRef.current = true;
     const store = usePetStore.getState();
+    store.wakeFromSleep();
     store.setDragging(true);
     store.setAnimation('idle');
     store.touchInteraction();
@@ -174,6 +175,7 @@ export function PixelPet(): JSX.Element {
     if (dragActiveRef.current) return;
 
     e.preventDefault();
+    usePetStore.getState().wakeFromSleep();
     clickRef.current.active = true;
     try {
       e.currentTarget.setPointerCapture(e.pointerId);

@@ -74,6 +74,7 @@ export interface PetStore {
   isSnoozed: () => boolean;
   startPomodoro: (phase: 'work' | 'break', durationMinutes: number) => void;
   clearPomodoro: () => void;
+  wakeFromSleep: () => boolean;
 }
 
 let speechTimer: ReturnType<typeof setTimeout> | null = null;
@@ -211,7 +212,14 @@ export const usePetStore = create<PetStore>((set, get) => ({
   setPetOffset: (petOffsetX, petOffsetY) => set({ petOffsetX, petOffsetY }),
   setFacing: (facing) => set({ facing }),
   setDragging: (isDragging) => set({ isDragging }),
-  touchInteraction: () => set({ lastInteractionAt: Date.now() }),
+  touchInteraction: () => {
+    const state = get();
+    if (state.petState === 'sleeping') {
+      get().wakeFromSleep();
+      return;
+    }
+    set({ lastInteractionAt: Date.now() });
+  },
   markAlerted: (key) => set({ lastAlertAt: Date.now(), lastAlertKey: key }),
   resetAlertKey: () => set({ lastAlertKey: null }),
   snoozeAlerts: (durationMs) => set({ snoozeUntil: Date.now() + durationMs }),
@@ -225,4 +233,21 @@ export const usePetStore = create<PetStore>((set, get) => ({
       pomodoroEndsAt: Date.now() + durationMinutes * 60_000,
     }),
   clearPomodoro: () => set({ pomodoroPhase: 'idle', pomodoroEndsAt: null }),
+  wakeFromSleep: () => {
+    const state = get();
+    if (state.petState !== 'sleeping') return false;
+
+    const messages = ['morning!', 'hey!', 'zz... hi', 'awake now', 'nap done'];
+    set({
+      petState: 'idle',
+      currentAnimation: 'wake_up',
+      lastInteractionAt: Date.now(),
+    });
+
+    if (Math.random() < 0.4) {
+      get().showSpeech(messages[Math.floor(Math.random() * messages.length)], 2000);
+    }
+
+    return true;
+  },
 }));
