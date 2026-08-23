@@ -1,6 +1,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import type { ClaudeStatus } from '../../src/types/claude';
+import { inferClaudeStatusFromText } from './claudeSignals';
 import type { PermissionDialogInfo } from './permission';
 import { matchesPermissionDialog } from './permission';
 import type { MeetingInfo } from './meeting';
@@ -40,15 +41,7 @@ async function getForegroundWindowTitle(): Promise<string | null> {
 }
 
 function inferStatusFromTitle(title: string): ClaudeStatus {
-  const lower = title.toLowerCase();
-  if (!lower.includes('claude')) return 'idle';
-  if (lower.includes('waiting') || lower.includes('input')) {
-    return 'waiting_for_user';
-  }
-  if (lower.includes('generating') || lower.includes('thinking')) {
-    return 'working';
-  }
-  return 'idle';
+  return inferClaudeStatusFromText(title, { requireClaudeName: true });
 }
 
 export const windowsAdapter: PlatformAdapter = {
