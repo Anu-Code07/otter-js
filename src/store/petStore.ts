@@ -17,6 +17,8 @@ const emptySnapshot = (): AttentionSnapshot => ({
     git: createIdleSignal('git'),
     meeting: createIdleSignal('meeting'),
     integration: createIdleSignal('integration'),
+    github: createIdleSignal('github'),
+    calendar: createIdleSignal('calendar'),
   },
 });
 
@@ -45,6 +47,8 @@ export interface PetStore {
   lastAlertAt: number;
   lastAlertKey: string | null;
   snoozeUntil: number | null;
+  pomodoroPhase: 'idle' | 'work' | 'break';
+  pomodoroEndsAt: number | null;
 
   setPetState: (state: PetState) => void;
   setAnimation: (animation: PetAnimation) => void;
@@ -68,6 +72,8 @@ export interface PetStore {
   resetAlertKey: () => void;
   snoozeAlerts: (durationMs: number) => void;
   isSnoozed: () => boolean;
+  startPomodoro: (phase: 'work' | 'break', durationMinutes: number) => void;
+  clearPomodoro: () => void;
 }
 
 let speechTimer: ReturnType<typeof setTimeout> | null = null;
@@ -109,6 +115,8 @@ export const usePetStore = create<PetStore>((set, get) => ({
   lastAlertAt: 0,
   lastAlertKey: null,
   snoozeUntil: null,
+  pomodoroPhase: 'idle',
+  pomodoroEndsAt: null,
 
   setPetState: (petState) => set({ petState }),
   setAnimation: (currentAnimation) => set({ currentAnimation }),
@@ -211,4 +219,10 @@ export const usePetStore = create<PetStore>((set, get) => ({
     const until = get().snoozeUntil;
     return until !== null && Date.now() < until;
   },
+  startPomodoro: (phase, durationMinutes) =>
+    set({
+      pomodoroPhase: phase,
+      pomodoroEndsAt: Date.now() + durationMinutes * 60_000,
+    }),
+  clearPomodoro: () => set({ pomodoroPhase: 'idle', pomodoroEndsAt: null }),
 }));

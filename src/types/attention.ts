@@ -5,7 +5,9 @@ export type AttentionSourceId =
   | 'terminal'
   | 'git'
   | 'meeting'
-  | 'integration';
+  | 'integration'
+  | 'github'
+  | 'calendar';
 
 export type AttentionStatus =
   | 'idle'
@@ -49,6 +51,8 @@ export const ATTENTION_SOURCE_LABELS: Record<AttentionSourceId, string> = {
   git: 'Git',
   meeting: 'Meetings',
   integration: 'Integration',
+  github: 'GitHub',
+  calendar: 'Calendar',
 };
 
 export const DEFAULT_ATTENTION_MESSAGES: Record<AttentionSourceId, string[]> = {
@@ -94,5 +98,17 @@ export const DEFAULT_ATTENTION_MESSAGES: Record<AttentionSourceId, string[]> = {
     'Integration alert',
     'Your tool is calling',
     'Hey human!',
+  ],
+  github: [
+    'GitHub needs you',
+    'PR or CI ping',
+    'Review requested',
+    'Check GitHub',
+  ],
+  calendar: [
+    'Meeting soon',
+    'Calendar reminder',
+    'Upcoming event',
+    'Get ready',
   ],
 };

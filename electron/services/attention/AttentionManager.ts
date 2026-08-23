@@ -13,6 +13,8 @@ import { terminalAttentionSource } from './TerminalAttentionSource';
 import { gitAttentionSource, resolveGitWorkingDirectory } from './GitAttentionSource';
 import { meetingAttentionSource } from './MeetingAttentionSource';
 import { integrationWebhookSource } from './IntegrationWebhookSource';
+import { calendarAttentionSource } from './CalendarAttentionSource';
+import { githubAttentionSource } from './GitHubAttentionSource';
 import { BaseAttentionSource } from './BaseAttentionSource';
 
 export class AttentionManager {
@@ -27,6 +29,8 @@ export class AttentionManager {
     git: gitAttentionSource,
     meeting: meetingAttentionSource,
     integration: integrationWebhookSource,
+    github: githubAttentionSource,
+    calendar: calendarAttentionSource,
   };
 
   private signals: Record<AttentionSourceId, AttentionSignal> = {
@@ -37,6 +41,8 @@ export class AttentionManager {
     git: gitAttentionSource.getSignal(),
     meeting: meetingAttentionSource.getSignal(),
     integration: integrationWebhookSource.getSignal(),
+    github: githubAttentionSource.getSignal(),
+    calendar: calendarAttentionSource.getSignal(),
   };
 
   private snapshot: AttentionSnapshot = mergeAttentionSnapshot(this.signals);
@@ -70,6 +76,8 @@ export class AttentionManager {
     this.sources.git.setEnabled(s.gitDetectionEnabled);
     this.sources.meeting.setEnabled(s.meetingDetectionEnabled);
     this.sources.integration.setEnabled(s.integrationWebhookEnabled);
+    this.sources.github.setEnabled(s.githubDetectionEnabled && s.githubToken.trim().length > 0);
+    this.sources.calendar.setEnabled(s.calendarDetectionEnabled);
     gitAttentionSource.setWorkingDirectory(resolveGitWorkingDirectory(s));
 
     const webhookChanged =

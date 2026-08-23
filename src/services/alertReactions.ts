@@ -23,6 +23,10 @@ export function alertAnimationForSource(
       return 'sit';
     case 'integration':
       return 'wave';
+    case 'github':
+      return 'curious';
+    case 'calendar':
+      return 'wave';
     default:
       return 'alert';
   }

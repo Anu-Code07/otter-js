@@ -19,6 +19,8 @@ describe('attentionLogic', () => {
       git: createIdleSignal('git'),
       meeting: createIdleSignal('meeting'),
       integration: createIdleSignal('integration'),
+      github: createIdleSignal('github'),
+      calendar: createIdleSignal('calendar'),
     });
     expect(snapshot.active?.sourceId).toBe('permission');
     expect(snapshot.topPriority).toBe('critical');
@@ -53,6 +55,8 @@ describe('attentionLogic', () => {
       terminalAlerts: true,
       gitAlerts: true,
       integrationAlerts: true,
+      githubAlerts: true,
+      calendarAlerts: true,
     };
     expect(isSourceAlertsEnabled('claude', settings)).toBe(true);
     expect(isSourceAlertsEnabled('permission', settings)).toBe(false);

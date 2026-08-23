@@ -19,6 +19,10 @@ export interface AttentionSourceSettings {
   integrationWebhookEnabled: boolean;
   integrationAlerts: boolean;
   integrationWebhookPort: number;
+  githubDetectionEnabled: boolean;
+  githubAlerts: boolean;
+  calendarDetectionEnabled: boolean;
+  calendarAlerts: boolean;
   buildWatchPath: string;
   terminalWatchPath: string;
   attentionAlertsEnabled: boolean;
@@ -29,7 +33,20 @@ export interface AttentionSourceSettings {
 
 export type PerformanceMode = 'minimal' | 'normal' | 'playful';
 
-export interface AppSettings extends AttentionSourceSettings {
+export interface AssistantSettings {
+  showMoodIndicator: boolean;
+  stretchReminderEnabled: boolean;
+  stretchReminderMinutes: number;
+  pomodoroWorkMinutes: number;
+  pomodoroBreakMinutes: number;
+  standupReminderEnabled: boolean;
+  standupReminderTime: string;
+  focusModeEnabled: boolean;
+  calendarReminderLeadMinutes: number;
+  githubToken: string;
+}
+
+export interface AppSettings extends AttentionSourceSettings, AssistantSettings {
   launchAtStartup: boolean;
   petSize: number;
   petOpacity: number;
@@ -79,6 +96,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   integrationWebhookEnabled: true,
   integrationAlerts: true,
   integrationWebhookPort: 47832,
+  githubDetectionEnabled: false,
+  githubAlerts: true,
+  calendarDetectionEnabled: true,
+  calendarAlerts: true,
   buildWatchPath: '',
   terminalWatchPath: '',
   attentionAlertsEnabled: true,
@@ -96,7 +117,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
   performanceMode: 'normal',
   inactivityTimeoutMs: 120_000,
   notificationCooldownMs: 60_000,
-  settingsMigrationVersion: 7,
+  showMoodIndicator: true,
+  stretchReminderEnabled: true,
+  stretchReminderMinutes: 120,
+  pomodoroWorkMinutes: 25,
+  pomodoroBreakMinutes: 5,
+  standupReminderEnabled: false,
+  standupReminderTime: '09:00',
+  focusModeEnabled: false,
+  calendarReminderLeadMinutes: 5,
+  githubToken: '',
+  settingsMigrationVersion: 8,
 };
 
 export interface WindowBounds {

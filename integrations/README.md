@@ -68,6 +68,29 @@ Or set custom paths in **Settings → Attention Sources**.
 
 Enable **Git** in Settings. PixelPaw checks for merge conflicts and dirty conflict states in the current project directory.
 
+## Slack bridge
+
+Run locally to forward Slack workflow webhooks to PixelPaw:
+
+```bash
+node integrations/slack-bridge.mjs
+# POST http://127.0.0.1:47833/slack with JSON: {"text":"@you in #engineering"}
+```
+
+## GitHub Actions
+
+See `integrations/github-workflow.yml` for CI failure alerts on a self-hosted runner.
+
+## Jira / Linear / Notion
+
+Use the webhook with a custom title:
+
+```bash
+curl -X POST http://127.0.0.1:47832/attention \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"needs_user","title":"Linear","message":"Issue assigned to you"}'
+```
+
 ## Privacy
 
 All integrations are **local only**. The webhook binds to `127.0.0.1` and never sends data off your machine.

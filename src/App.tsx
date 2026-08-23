@@ -2,10 +2,12 @@ import { useEffect } from 'react';
 import { PixelPet } from './components/PixelPet';
 import { SettingsWindow } from './components/SettingsWindow';
 import { StatusIndicator } from './components/StatusIndicator';
+import { useWellnessController } from './hooks/useWellnessController';
 import { ipc } from './services/ipc';
 
 function App() {
   const isSettings = window.location.hash === '#/settings';
+  useWellnessController();
 
   useEffect(() => {
     if (!isSettings) {

@@ -73,6 +73,17 @@ function broadcastToPet(action: string): void {
 
 function handleTrayAction(action: string): void {
   switch (action) {
+    case 'toggle-focus':
+      settingsService.set({ focusModeEnabled: !settingsService.get().focusModeEnabled });
+      updateTrayMenu();
+      broadcastToPet('toggle-focus');
+      break;
+    case 'pomodoro-start':
+      broadcastToPet('pomodoro-start');
+      break;
+    case 'pomodoro-stop':
+      broadcastToPet('pomodoro-stop');
+      break;
     case 'toggle-alerts':
       attentionAlertsEnabled = !attentionAlertsEnabled;
       settingsService.set({ attentionAlertsEnabled });
@@ -115,6 +126,19 @@ function updateTrayMenu(): void {
 
   const menu = Menu.buildFromTemplate([
     { label: 'PixelPaw', enabled: false },
+    {
+      label: settings.focusModeEnabled ? '✓ Focus Mode' : 'Focus Mode',
+      click: () => handleTrayAction('toggle-focus'),
+    },
+    {
+      label: 'Start Pomodoro',
+      click: () => handleTrayAction('pomodoro-start'),
+    },
+    {
+      label: 'Stop Pomodoro',
+      click: () => handleTrayAction('pomodoro-stop'),
+    },
+    { type: 'separator' },
     {
       label: settings.followCursor ? '✓ Follow Cursor' : 'Follow Cursor',
       click: () => handleTrayAction('toggle-follow'),

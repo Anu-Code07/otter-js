@@ -836,3 +836,72 @@ body:has(.settings-window) {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.pixel-pet-container.focus-mode .pixel-pet {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+}
+
+.mood-indicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 2px solid #4a3020;
+  border-radius: 999px;
+  background: rgba(255, 254, 248, 0.92);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.pixel-pet-container:hover .mood-indicator {
+  opacity: 1;
+}
+
+.mood-emoji {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.mood-stats {
+  display: flex;
+  gap: 6px;
+}
+
+.mood-stat {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.mood-stat-label {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.mood-stat-bar {
+  width: 36px;
+  height: 6px;
+  border-radius: 999px;
+  background: #e8dcc8;
+  overflow: hidden;
+}
+
+.mood-stat-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.mood-stat-fill.energy {
+  background: #6bcf7f;
+}
+
+.mood-stat-fill.happiness {
+  background: #ff8fab;
+}

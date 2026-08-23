@@ -1,0 +1,21 @@
+# Notify PixelPaw when GitHub Actions CI fails (self-hosted runner on your Mac)
+#
+# Copy to: .github/workflows/pixelpaw-alert.yml
+
+name: PixelPaw CI Alert
+
+on:
+  workflow_run:
+    workflows: ['*']
+    types: [completed]
+
+jobs:
+  notify-pixelpaw:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: self-hosted
+    steps:
+      - name: Alert PixelPaw
+        run: |
+          curl -sf -X POST http://127.0.0.1:47832/attention \
+            -H 'Content-Type: application/json' \
+            -d "{\"status\":\"needs_user\",\"title\":\"GitHub\",\"message\":\"CI failed: ${{ github.event.workflow_run.name }}\",\"priority\":\"high\"}"

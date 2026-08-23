@@ -107,6 +107,9 @@ export function usePetController(): {
 
   const handleAttentionAlert = useCallback((signal: AttentionSignal) => {
     const store = usePetStore.getState();
+    if (store.settings?.focusModeEnabled) {
+      if (signal.priority !== 'critical' && signal.priority !== 'high') return;
+    }
     if (store.isSnoozed()) return;
     if (!store.settings || !isSourceAlertsEnabled(signal.sourceId, store.settings)) return;
     if (
@@ -411,6 +414,11 @@ export function usePetController(): {
           activeAlert ||
           (speechVisible && speechKind === 'alert')
         ) {
+          scheduleChatter();
+          return;
+        }
+
+        if (usePetStore.getState().settings?.focusModeEnabled) {
           scheduleChatter();
           return;
         }

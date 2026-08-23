@@ -6,6 +6,7 @@ import { idleSpritePath } from '../services/assetPaths';
 import { getPetDefinition } from '../pets/registry';
 import { SpeechBubble } from './SpeechBubble';
 import { AlertBannerFromStore } from './AlertBanner';
+import { MoodIndicator } from './MoodIndicator';
 import { PetContextMenu } from './PetContextMenu';
 import { AvatarPickerMenu } from './AvatarPickerMenu';
 import type { PetAnimation } from '../types/pet';
@@ -33,6 +34,8 @@ export function PixelPet(): JSX.Element {
   const selectedPetId = usePetStore((s) => s.settings?.selectedPetId ?? 'otter');
   const petState = usePetStore((s) => s.petState);
   const isDragging = usePetStore((s) => s.isDragging);
+  const showMood = usePetStore((s) => s.settings?.showMoodIndicator ?? true);
+  const focusMode = usePetStore((s) => s.settings?.focusModeEnabled ?? false);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const clickRef = useRef<ClickSession>(createClickSession());
@@ -262,7 +265,7 @@ export function PixelPet(): JSX.Element {
 
   return (
     <div
-      className={`pixel-pet-container${menuOpen ? ' menu-open' : ''}`}
+      className={`pixel-pet-container${menuOpen ? ' menu-open' : ''}${focusMode ? ' focus-mode' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onContextMenu={handleContextMenu}
@@ -274,6 +277,7 @@ export function PixelPet(): JSX.Element {
         onChangePet={openAvatarPicker}
       />
       <div className="pixel-pet-stage">
+        {showMood && <MoodIndicator />}
         <AlertBannerFromStore />
         {speechVisible && speechMessage && speechKind === 'chat' && (
           <SpeechBubble message={speechMessage} />

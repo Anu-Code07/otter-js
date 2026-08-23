@@ -24,6 +24,8 @@ const SOURCE_TOGGLES: Array<{
   { id: 'git', detectionKey: 'gitDetectionEnabled', alertKey: 'gitAlerts' },
   { id: 'meeting', detectionKey: 'meetingDetectionEnabled', alertKey: 'meetingAlerts' },
   { id: 'integration', detectionKey: 'integrationWebhookEnabled', alertKey: 'integrationAlerts' },
+  { id: 'github', detectionKey: 'githubDetectionEnabled', alertKey: 'githubAlerts' },
+  { id: 'calendar', detectionKey: 'calendarDetectionEnabled', alertKey: 'calendarAlerts' },
 ];
 
 function useDebouncedSetting<K extends keyof AppSettings>(
@@ -78,7 +80,7 @@ export function SettingsWindow({ onClose }: SettingsWindowProps) {
   }, []);
 
   const clearSimulation = useCallback(async () => {
-    const sources: AttentionSourceId[] = ['claude', 'permission', 'build', 'terminal', 'git', 'meeting', 'integration'];
+    const sources: AttentionSourceId[] = ['claude', 'permission', 'build', 'terminal', 'git', 'meeting', 'integration', 'github', 'calendar'];
     await Promise.all(sources.map((id) => ipc().attention.simulate(id, null)));
     await ipc().claude.simulateStatus(null);
   }, []);
@@ -189,6 +191,109 @@ export function SettingsWindow({ onClose }: SettingsWindowProps) {
             onChange={(e) => void update({ interactionFrequency: Number(e.target.value) })}
           />
         </label>
+      </section>
+
+      <section>
+        <h2>Personal Assistant</h2>
+        <p className="settings-hint">On-screen presence, focus, and wellness reminders.</p>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.showMoodIndicator}
+            onChange={(e) => void update({ showMoodIndicator: e.target.checked })}
+          />
+          Show mood on hover
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.focusModeEnabled}
+            onChange={(e) => void update({ focusModeEnabled: e.target.checked })}
+          />
+          Focus mode (quiet pet, urgent alerts only)
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.stretchReminderEnabled}
+            onChange={(e) => void update({ stretchReminderEnabled: e.target.checked })}
+          />
+          Stretch reminders
+        </label>
+        <label>
+          Stretch after: {settings.stretchReminderMinutes} min coding
+          <input
+            type="range"
+            min={30}
+            max={240}
+            step={15}
+            value={settings.stretchReminderMinutes}
+            onChange={(e) => void update({ stretchReminderMinutes: Number(e.target.value) })}
+          />
+        </label>
+        <label>
+          Pomodoro work: {settings.pomodoroWorkMinutes} min
+          <input
+            type="range"
+            min={15}
+            max={60}
+            step={5}
+            value={settings.pomodoroWorkMinutes}
+            onChange={(e) => void update({ pomodoroWorkMinutes: Number(e.target.value) })}
+          />
+        </label>
+        <label>
+          Pomodoro break: {settings.pomodoroBreakMinutes} min
+          <input
+            type="range"
+            min={3}
+            max={20}
+            step={1}
+            value={settings.pomodoroBreakMinutes}
+            onChange={(e) => void update({ pomodoroBreakMinutes: Number(e.target.value) })}
+          />
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.standupReminderEnabled}
+            onChange={(e) => void update({ standupReminderEnabled: e.target.checked })}
+          />
+          Daily standup reminder
+        </label>
+        {settings.standupReminderEnabled && (
+          <label>
+            Standup time
+            <input
+              type="time"
+              value={settings.standupReminderTime}
+              onChange={(e) => void update({ standupReminderTime: e.target.value })}
+            />
+          </label>
+        )}
+        <label>
+          Calendar lead time: {settings.calendarReminderLeadMinutes} min before events
+          <input
+            type="range"
+            min={1}
+            max={30}
+            step={1}
+            value={settings.calendarReminderLeadMinutes}
+            onChange={(e) => void update({ calendarReminderLeadMinutes: Number(e.target.value) })}
+          />
+        </label>
+        <label>
+          GitHub token (optional, for PR/CI alerts)
+          <input
+            type="password"
+            value={settings.githubToken}
+            placeholder="ghp_..."
+            onChange={(e) => void update({ githubToken: e.target.value })}
+          />
+        </label>
+        <p className="settings-hint">
+          Tray menu: Focus mode, Start pomodoro. Slack/Jira/Linear via webhook — see integrations folder.
+        </p>
       </section>
 
       <section>

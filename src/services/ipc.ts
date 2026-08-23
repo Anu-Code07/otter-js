@@ -12,6 +12,8 @@ const idleSnapshot = (): AttentionSnapshot => ({
     git: createIdleSignal('git'),
     meeting: createIdleSignal('meeting'),
     integration: createIdleSignal('integration'),
+    github: createIdleSignal('github'),
+    calendar: createIdleSignal('calendar'),
   },
 });
 

@@ -87,6 +87,8 @@ export function isSourceAlertsEnabled(
     gitAlerts: boolean;
     meetingAlerts: boolean;
     integrationAlerts: boolean;
+    githubAlerts: boolean;
+    calendarAlerts: boolean;
   },
 ): boolean {
   if (!settings.attentionAlertsEnabled) return false;
@@ -98,6 +100,8 @@ export function isSourceAlertsEnabled(
     case 'git': return settings.gitAlerts;
     case 'meeting': return settings.meetingAlerts;
     case 'integration': return settings.integrationAlerts;
+    case 'github': return settings.githubAlerts;
+    case 'calendar': return settings.calendarAlerts;
     default: return false;
   }
 }

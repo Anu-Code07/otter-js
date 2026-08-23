@@ -9,7 +9,7 @@ const store = new Store<AppSettings>({
   defaults: DEFAULT_SETTINGS,
 });
 
-const SETTINGS_MIGRATION_VERSION = 7;
+const SETTINGS_MIGRATION_VERSION = 8;
 
 type SettingsKey = keyof AppSettings;
 
@@ -58,6 +58,24 @@ export class SettingsService {
       store.set('alwaysOnTop', true);
       store.delete('windowBounds');
       logger.info('Settings migrated to v7 — pet visibility recovered');
+    }
+
+    if (version < 8) {
+      if (store.get('showMoodIndicator') === undefined) store.set('showMoodIndicator', true);
+      if (store.get('stretchReminderEnabled') === undefined) store.set('stretchReminderEnabled', true);
+      if (store.get('stretchReminderMinutes') === undefined) store.set('stretchReminderMinutes', 120);
+      if (store.get('pomodoroWorkMinutes') === undefined) store.set('pomodoroWorkMinutes', 25);
+      if (store.get('pomodoroBreakMinutes') === undefined) store.set('pomodoroBreakMinutes', 5);
+      if (store.get('standupReminderEnabled') === undefined) store.set('standupReminderEnabled', false);
+      if (store.get('standupReminderTime') === undefined) store.set('standupReminderTime', '09:00');
+      if (store.get('focusModeEnabled') === undefined) store.set('focusModeEnabled', false);
+      if (store.get('calendarReminderLeadMinutes') === undefined) store.set('calendarReminderLeadMinutes', 5);
+      if (store.get('githubDetectionEnabled') === undefined) store.set('githubDetectionEnabled', false);
+      if (store.get('githubAlerts') === undefined) store.set('githubAlerts', true);
+      if (store.get('calendarDetectionEnabled') === undefined) store.set('calendarDetectionEnabled', true);
+      if (store.get('calendarAlerts') === undefined) store.set('calendarAlerts', true);
+      if (store.get('githubToken') === undefined) store.set('githubToken', '');
+      logger.info('Settings migrated to v8 — personal assistant defaults applied');
     }
 
     store.set('settingsMigrationVersion', SETTINGS_MIGRATION_VERSION);
