@@ -251,7 +251,7 @@ export class WindowManager {
       void this.settingsWindow.loadURL(`${devUrl}#/settings`);
     } else {
       void this.settingsWindow.loadFile(path.join(__dirname, '../dist/index.html'), {
-        hash: 'settings',
+        hash: '/settings',
       });
     }
 
