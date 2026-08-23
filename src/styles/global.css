@@ -905,3 +905,136 @@ body:has(.settings-window) {
 .mood-stat-fill.happiness {
   background: #ff8fab;
 }
+
+.welcome-overlay {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 50;
+  width: calc(100% - 4px);
+  max-width: 100%;
+  pointer-events: auto;
+  animation: avatar-picker-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.welcome-card {
+  background: #fffef8;
+  border: 2px solid #4a3020;
+  border-radius: 10px;
+  padding: 10px 12px 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.welcome-card h2 {
+  font-size: 15px;
+  font-weight: 800;
+  color: #4a3020;
+  margin-bottom: 2px;
+}
+
+.welcome-version {
+  font-size: 10px;
+  color: #8b7355;
+  margin-bottom: 6px;
+}
+
+.welcome-lead {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #5a4a38;
+  margin-bottom: 8px;
+}
+
+.welcome-tips {
+  list-style: none;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #4a3020;
+  margin-bottom: 8px;
+}
+
+.welcome-tips li {
+  padding: 2px 0;
+}
+
+.welcome-tips strong {
+  color: #4a3020;
+}
+
+.welcome-pets-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #4a3020;
+  margin-bottom: 4px;
+}
+
+.welcome-pet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.welcome-pet-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 2px;
+  border: 1px solid #e0d8c8;
+  border-radius: 6px;
+  background: #fffef8;
+  font-size: 9px;
+  color: #4a3020;
+  cursor: pointer;
+}
+
+.welcome-pet-btn:hover {
+  background: #f0e8d8;
+  border-color: #c8b8a0;
+}
+
+.welcome-pet-btn.selected {
+  border-color: #4a3020;
+  background: #fff8f0;
+}
+
+.welcome-pet-btn span:first-child {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.welcome-primary,
+.welcome-secondary {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 2px solid #4a3020;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.welcome-primary {
+  background: #4a3020;
+  color: #fffef8;
+}
+
+.welcome-primary:hover {
+  background: #5a4030;
+}
+
+.welcome-secondary {
+  background: #fffef8;
+  color: #4a3020;
+}
+
+.welcome-secondary:hover {
+  background: #f0e8d8;
+}

@@ -9,6 +9,7 @@ import { AlertBannerFromStore } from './AlertBanner';
 import { MoodIndicator } from './MoodIndicator';
 import { PetContextMenu } from './PetContextMenu';
 import { AvatarPickerMenu } from './AvatarPickerMenu';
+import { WelcomeOverlay } from './WelcomeOverlay';
 import type { PetAnimation } from '../types/pet';
 
 const CLICK_WINDOW_MS = 400;
@@ -19,7 +20,7 @@ type ClickSession = {
   clickTimer: ReturnType<typeof setTimeout> | null;
 };
 
-type OverlayMode = 'none' | 'avatar' | 'context';
+type OverlayMode = 'none' | 'avatar' | 'context' | 'welcome';
 
 function createClickSession(): ClickSession {
   return { active: false, clickCount: 0, clickTimer: null };
@@ -41,11 +42,16 @@ export function PixelPet(): JSX.Element {
   const clickRef = useRef<ClickSession>(createClickSession());
   const dragActiveRef = useRef(false);
 
+  const needsWelcome = settings !== null && !settings.hasCompletedOnboarding;
+  const showWelcome = needsWelcome && !avatarPickerOpen && !contextMenuOpen;
+
   const overlayMode: OverlayMode = contextMenuOpen
     ? 'context'
     : avatarPickerOpen
       ? 'avatar'
-      : 'none';
+      : showWelcome
+        ? 'welcome'
+        : 'none';
   const menuOpen = overlayMode !== 'none';
 
   const size = settings?.petSize ?? 160;
@@ -272,6 +278,9 @@ export function PixelPet(): JSX.Element {
       onMouseLeave={handleMouseLeave}
       onContextMenu={handleContextMenu}
     >
+      {showWelcome && (
+        <WelcomeOverlay onComplete={() => undefined} onPickPet={openAvatarPicker} />
+      )}
       <AvatarPickerMenu visible={avatarPickerOpen} onClose={() => setAvatarPickerOpen(false)} />
       <PetContextMenu
         visible={contextMenuOpen}
