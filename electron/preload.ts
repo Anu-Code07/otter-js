@@ -61,7 +61,7 @@ const pixelPaw = {
     resetPosition: (): Promise<void> => ipcRenderer.invoke('window:resetPosition'),
     setMenuExpanded: (expanded: boolean): Promise<void> =>
       ipcRenderer.invoke('window:setMenuExpanded', expanded),
-    setOverlayMode: (mode: 'none' | 'avatar' | 'context'): Promise<void> =>
+    setOverlayMode: (mode: 'none' | 'avatar' | 'context' | 'welcome'): Promise<void> =>
       ipcRenderer.invoke('window:setOverlayMode', mode),
   },
   settings: {
