@@ -9,12 +9,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const WINDOW_CHROME = 8;
 
-export type OverlayMode = 'none' | 'avatar' | 'context';
+export type OverlayMode = 'none' | 'avatar' | 'context' | 'welcome';
 
 const OVERLAY_HEIGHTS: Record<OverlayMode, number> = {
   none: 0,
   avatar: 108,
   context: 228,
+  welcome: 340,
 };
 
 export function petWindowSize(petSize: number): number {

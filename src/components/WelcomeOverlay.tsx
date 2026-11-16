@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { usePetStore } from '../store/petStore';
 import { ipc } from '../services/ipc';
 import { getAvailablePets } from '../pets/registry';
 import { APP_VERSION } from '../constants/app';
@@ -10,6 +11,7 @@ interface WelcomeOverlayProps {
 
 export function WelcomeOverlay({ onComplete, onPickPet }: WelcomeOverlayProps): JSX.Element {
   const pets = getAvailablePets();
+  const selectedPetId = usePetStore((s) => s.settings?.selectedPetId ?? 'otter');
 
   const finish = useCallback(() => {
     void ipc().settings.set({ hasCompletedOnboarding: true });
@@ -50,7 +52,7 @@ export function WelcomeOverlay({ onComplete, onPickPet }: WelcomeOverlayProps): 
               <button
                 key={pet.id}
                 type="button"
-                className="welcome-pet-btn"
+                className={`welcome-pet-btn${selectedPetId === pet.id ? ' selected' : ''}`}
                 onClick={() => void selectPet(pet.id)}
               >
                 <span>{pet.emoji}</span>

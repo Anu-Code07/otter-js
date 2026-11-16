@@ -6,5 +6,6 @@ describe('settings', () => {
     expect(DEFAULT_SETTINGS.petSize).toBeGreaterThanOrEqual(64);
     expect(DEFAULT_SETTINGS.claudeAlerts).toBe(true);
     expect(DEFAULT_SETTINGS.notificationCooldownMs).toBeGreaterThan(0);
+    expect(DEFAULT_SETTINGS.hasCompletedOnboarding).toBe(false);
   });
 });

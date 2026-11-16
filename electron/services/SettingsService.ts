@@ -9,7 +9,7 @@ const store = new Store<AppSettings>({
   defaults: DEFAULT_SETTINGS,
 });
 
-const SETTINGS_MIGRATION_VERSION = 8;
+const SETTINGS_MIGRATION_VERSION = 9;
 
 type SettingsKey = keyof AppSettings;
 
@@ -76,6 +76,14 @@ export class SettingsService {
       if (store.get('calendarAlerts') === undefined) store.set('calendarAlerts', true);
       if (store.get('githubToken') === undefined) store.set('githubToken', '');
       logger.info('Settings migrated to v8 — personal assistant defaults applied');
+    }
+
+    if (version < 9) {
+      // Existing installs skip welcome; fresh installs keep default false.
+      if (version > 0) {
+        store.set('hasCompletedOnboarding', true);
+      }
+      logger.info('Settings migrated to v9 — onboarding flag applied');
     }
 
     store.set('settingsMigrationVersion', SETTINGS_MIGRATION_VERSION);
